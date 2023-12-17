@@ -1,39 +1,24 @@
 #!/usr/bin/env python3
 
-import os, sys, shutil, argparse  # noqa
-from icecream import IceCreamDebugger
+import os, sys, shutil, typer       # noqa
+from pathlib import Path
+from typing_extensions import Annotated
+from typing import Optional
 from pathvalidate import sanitize_filename
+from rich import print
 
 
-ic = IceCreamDebugger(prefix='')
-
-CHUNK_NAME = 'chunk'
-ITEM_COUNT = 110
+__version__ = "0.1.0"
 errors = {}
 
 
 def chunk_it(data: list, n: int):
-    """Yield successive n-sized chunks from lst."""
+    """Yield successive n-sized chunks from data."""
     for i in range(0, len(data), n):
         yield data[i:i + n]
 
 
-def can_continue() -> bool:
-    args = sys.argv
-    if len(args) != 2:
-        ic('Missing folder path')
-        return False
-
-    path = os.path.abspath(args[1])
-
-    if not os.path.isdir(path):
-        ic('Not a folder')
-        return False
-
-    return True
-
-
-def rename_file(path: str, file: str) -> str | None:
+def rename_file(path: Path, file: str) -> str | None:
     try:
         new_file = sanitize_filename(file)
         new_path = os.path.join(path, new_file)
@@ -47,36 +32,50 @@ def rename_file(path: str, file: str) -> str | None:
         return None
 
 
-def has_errors() -> int:
-    return len(errors)
+def version_callback(show: bool):
+    if show:
+        print(f'Chunk CLI version:', __version__)
+        raise typer.Exit()
 
 
-if __name__ == '__main__':
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('-c', '--chunk', default=ITEM_COUNT, type=int, help='Number of files per chunked folder')
-    # args = parser.parse_args()
-    # ic(args.chunk)
+def clean_path(path: str):
+    path = os.path.abspath(path)
+    if _ := os.path.isdir(path):
+        return path
 
-    if not can_continue():
-        sys.exit(1)
+    print("Directory doesn't exist")
+    raise typer.Abort()
 
-    folder_path = os.path.abspath(sys.argv[1])
 
-    # CLean names
+def main(
+        path: Annotated[Path, typer.Argument(help='Folder path', callback=os.path.abspath,
+                                             exists=True, file_okay=False)],
+        count: Annotated[int, typer.Option('--count', '-c', help='Number of files per chunked folder',
+                                           min=2, max=300)] = 110,
+        prefix: Annotated[str, typer.Option('--prefix', '-p', help='Prefix of each folder chunked folder')] = 'chunk-',
+        version: Annotated[bool, typer.Option('--version', callback=version_callback, is_eager=True,
+                                              help='Show program version')] = False,
+):
+    """
+    Group all first-level files into subfolders.
+    """
+    folder_path = path
+
+    # Rename
     files = [i for i in os.listdir(folder_path) if os.path.isfile(i)]
+    if not files:
+        raise typer.Exit()
     for name in files:
         rename_file(folder_path, name)
 
-
-
     files = sorted([i for i in os.listdir(folder_path) if os.path.isfile(i)])
-    chunks = list(chunk_it(files, ITEM_COUNT))
+    chunks = list(chunk_it(files, count))
     pad = len(str(len(chunks)))
-    count = 0
+    counter = 0
 
     for idx, namelist in enumerate(chunks):
         num = idx + 1
-        chunk_name = f'{CHUNK_NAME}-{num:0{pad}}'
+        chunk_name = f'{prefix}{num:0{pad}}'
         folder = os.path.join(folder_path, chunk_name)
 
         os.makedirs(folder, exist_ok=True)
@@ -86,13 +85,18 @@ if __name__ == '__main__':
 
             try:
                 shutil.move(from_path, to_path)
-                count += 1
+                counter += 1
             except Exception:   # noqa
                 errors.setdefault('unmoved', [])
                 errors['unmoved'].append(name)
 
-    if has_errors():
-        ic(errors)
+    if len(errors):
+        print(errors)
 
-    total = f'{count} files moved'
-    ic(total)
+    total = f'{counter} files moved'
+    print(total)
+
+
+if __name__ == '__main__':
+    typer.run(main)
+
