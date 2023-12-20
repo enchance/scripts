@@ -175,26 +175,7 @@ def generate_thumbnail_folder(path: Path, name: str) -> Path:   # noqa
     return thumb_path
 
 
-@click.group(**group_config)
-@click.version_option(__version__, prog_name=PROGRAM_NAME)
-def cli():
-    """
-    Generate thumbnails of video files and create an html file so they can be viewed. Similar to watching videos
-    online. Uses your browser's default player to watch the videos.
-    """
-
-
-@cli.command(**command_config)
-@click.argument('input_path', type=path_config)
-@click.option('--thumbnail', '-t', help='Name of thumbnail folder', default='.thumbnails', show_default=True)
-@click.option('--html', '-h', help='Name of HTML file', default='thumbnails', show_default=True)
-@click.option('--label', '-l', help='Title of the generated HTML file', default='Thumbnails', show_default=True)
-def create(input_path: Path, thumbnail: str, html: str, label: str):
-    """
-    Generate thumbnails of video files.
-    """
-    folder_path = input_path
-
+def create_thumbnails(folder_path: Path, thumbnail: str, html: str, title: str, show_message: bool = True):
     thumbnail_path = generate_thumbnail_folder(folder_path, thumbnail)
 
     # Rename
@@ -215,16 +196,18 @@ def create(input_path: Path, thumbnail: str, html: str, label: str):
             name, ext = os.path.splitext(file_name)
             createlist.append(name)
 
-    create_html(thumbnail_path, folder_path, f'{html}.html', label)
+    create_html(thumbnail_path, folder_path, f'{html}.html', title)
     remove_temp_files()
-    print(f'[COMPLETE]: {total_created} thumbnails generated.')
+
+    if show_message:
+        print(f'[COMPLETE]: {total_created} thumbnails generated')
 
 
-@cli.command(**command_config)
-@click.argument('input_path', type=path_config)
-@click.argument('video_names')
-@click.option('--folder_name', '-f', help='Folder name to move to', default='__done', show_default=True)
-def done(input_path: Path, video_names: str, folder_name: str):    # noqa
+# @cli.command(**command_config)
+# @click.argument('input_path', type=path_config)
+# @click.argument('video_names')
+
+def move_completed(input_path: Path, video_names: str, folder_name: str):    # noqa
     """
     Move watched movies to the DONE folder. File names must be separated by a "::" creating one long string.
     The complete list of watched videos can be copied from the browser console.
@@ -253,8 +236,36 @@ def done(input_path: Path, video_names: str, folder_name: str):    # noqa
             except Exception as _:
                 pass
 
-    print(f'[COMPLETE]: {total_moved} files moved.')
+    print(f'[COMPLETE]: {total_moved} files moved')
+
+
+@click.command(**command_config)
+@click.version_option(__version__, prog_name=PROGRAM_NAME)
+@click.argument('input_path', type=path_config)
+@click.argument('video_names', default=None, required=False)
+@click.option('--thumbnail', '-t', help='Name of thumbnail folder', default='.thumbnails', show_default=True)
+@click.option('--html', '-h', help='Name of HTML file', default='thumbnails', show_default=True)
+@click.option('--label', '-l', help='Title of the generated HTML file', default='Thumbnails', show_default=True)
+@click.option('--done', '-d', help='Folder name to move watched videos to', default='__done', show_default=True)
+@click.option('--regenerate', '-r', help='Regenerate the HTML file after moving files', is_flag=True, default=True,
+              show_default=True)
+def main(input_path: Path, thumbnail: str, html: str, label: str, video_names: str | None, done: str, regenerate: bool):
+    """
+    Generate thumbnails of video files and create an html file so they can be viewed. Uses your browser's default
+    player to watch the videos.\n
+
+    To move all watched videos to your "done" folder paste the string of filenames located in the console in
+    VIDEO_NAMES. Make sure the
+    string is quoted to prevent errors.
+    """
+    if video_names is None:
+        return create_thumbnails(input_path, thumbnail, html, label)
+
+    move_completed(input_path, video_names, done)
+    if regenerate:
+        create_thumbnails(input_path, thumbnail, html, label, show_message=False)
+        print(f'[COMPLETE]: HTML file updated')
 
 
 if __name__ == "__main__":
-    cli()
+    main()
