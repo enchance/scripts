@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
 
-
-import os, sys, re
+import os, sys, click, shutil
+from pathlib import Path
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from urllib.parse import quote, urlparse
-from pathvalidate import sanitize_filename
+from icecream import IceCreamDebugger
+
+from utils.utils import command_config, path_config, group_config, clean_filename
 
 
-html_filename = 'thumbnails.html'
-thumb_folder = '.thumbnails'
-total = 0
+# html_filename = 'thumbnails.html'
+# thumb_folder = '.thumbnails'
+__version__ = '0.2.0'
+ic = IceCreamDebugger(prefix='')
+PROGRAM_NAME = 'HTML Thumbnail Generator'
+VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv', '.mov', '.webm')
+
+
+total_created = 0
+total_moved = 0
 createlist = []
 errors = {}
 
 
-# def sanitize_filename(filename):
-#   """
-#   Sanitizes a filename by removing all special characters except letters, numbers, periods, and dashes.
-#   """
-#   valid_chars = r"[a-zA-Z0-9_\-\.]+"
-#   return re.sub(r"[^\w\-\.\s]", "", filename)
-
-
 def create_thumbnail(video_path, output_folder):
-    global total
+    global total_created
 
     # Check if thumbnail already exists
     thumbnail_name = os.path.splitext(os.path.basename(video_path))[0] + '_thumbnail.webm'
@@ -65,12 +66,12 @@ def create_thumbnail(video_path, output_folder):
     sanitized_video_path = os.path.join(os.path.dirname(video_path), sanitized_video_name)
     os.rename(video_path, sanitized_video_path)
 
-    total += 1
+    total_created += 1
     return thumbnail_path, total_duration
 
 
-def create_html(thumbnail_folder, videos_folder):
-    html_content = """
+def generate_html_head(label: str) -> str:
+    html = """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -93,26 +94,15 @@ def create_html(thumbnail_folder, videos_folder):
         <title>Video Thumbnails</title>
     </head>
     <body>
-        <h1>Thumbnails</h1>
+        <h1>%s</h1>
         <ul>
-    """
-    for file_name in sorted(os.listdir(thumbnail_folder)):
-        name_only, ext = os.path.splitext(file_name)
+    """ % label
+    return html
 
-        if name_only[0:-10] not in createlist:
-            continue
 
-        if file_name.endswith('_thumbnail.webm'):
-            thumbnail_path = os.path.join(thumbnail_folder, file_name)
-            video_name = os.path.splitext(file_name)[0].replace('_thumbnail', '')
-            video_path = os.path.join(videos_folder, video_name + '.mp4')
-            url_friendly_path = quote(urlparse(video_path).path)
-            head, tail = os.path.split(video_path)
-
-            _, full_video_duration = create_thumbnail(video_path, thumbnail_folder)
-            formatted_duration = f"{int(full_video_duration) // 3600:02d}:{int((full_video_duration % 3600) // 60):02d}:{int(full_video_duration % 60):02d}"
-
-            html_content += f'''
+def generate_html_tile(tail: str, url_friendly_path: str, thumbnail_path: str, video_name: str,
+                          formatted_duration: str) -> str:
+    html = f"""
             <li onclick="this.classList.add(\'done\');mark(\'{tail}\', \'{url_friendly_path}\')">
                 <div>
                     <video loop muted onmouseover="this.play()" onmouseout="this.pause()">
@@ -124,9 +114,12 @@ def create_html(thumbnail_folder, videos_folder):
                     <div class="duration">{formatted_duration}</div>
                 </footer>
             </li>
-            '''
+            """
+    return html
 
-    html_content += """
+
+def generate_html_footer() -> str:
+    html = """
         </ul>
         <script>
             let watched = [];
@@ -139,23 +132,34 @@ def create_html(thumbnail_folder, videos_folder):
     </body>
     </html>
     """
+    return html
 
-    with open(html_filename, 'w') as html_file:
+
+def create_html(thumbnail_folder: Path, videos_folder: Path, html_name: str, label: str):
+    html_content = generate_html_head(label)
+
+    for file_name in sorted(os.listdir(thumbnail_folder)):
+        name_only, ext = os.path.splitext(file_name)
+
+        if name_only[0:-10] not in createlist:
+            continue
+
+        if file_name.endswith('_thumbnail.webm'):
+            thumbnail_path = os.path.join(thumbnail_folder, file_name)
+            video_name = os.path.splitext(file_name)[0].replace('_thumbnail', '')
+            video_path = os.path.join(videos_folder, video_name + '.mp4')
+            url_friendly_path = quote(urlparse(video_path).path)
+            _, ext = os.path.split(video_path)
+
+            _, full_video_duration = create_thumbnail(video_path, thumbnail_folder)
+            formatted_duration = f"{int(full_video_duration) // 3600:02d}:{int((full_video_duration % 3600) // 60):02d}:{int(full_video_duration % 60):02d}"
+
+            html_content += generate_html_tile(ext, url_friendly_path, thumbnail_path, video_name, formatted_duration)
+
+    html_content += generate_html_footer()
+
+    with open(html_name, 'w') as html_file:
         html_file.write(html_content)
-
-
-def rename_file(path: str, file: str) -> str | None:
-    try:
-        new_file = sanitize_filename(file)
-        new_path = os.path.join(path, new_file)
-        fullpath = os.path.join(path, file)
-        if new_file != file:
-            os.rename(fullpath, new_path)
-        return new_file
-    except Exception:       # noqa
-        errors.setdefault('filenames', [])
-        errors['filenames'].append(file)
-        return None
 
 
 def remove_temp_files():
@@ -165,46 +169,92 @@ def remove_temp_files():
             os.remove(temp_file)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python script.py <path_to_folder>")
-        sys.exit(1)
+def generate_thumbnail_folder(path: Path, name: str) -> Path:   # noqa
+    thumb_path = Path(os.path.join(path, name))
+    os.makedirs(thumb_path, exist_ok=True)
+    return thumb_path
 
-    folder_path = os.path.abspath(sys.argv[1])
 
-    if not os.path.isdir(folder_path):
-        print("Invalid folder path.")
-        sys.exit(1)
+@click.group(**group_config)
+@click.version_option(__version__, prog_name=PROGRAM_NAME)
+def cli():
+    """
+    Generate thumbnails of video files and create an html file so they can be viewed. Similar to watching videos
+    online. Uses your browser's default player to watch the videos.
+    """
 
-    thumbnails_folder = os.path.join(folder_path, thumb_folder)
-    os.makedirs(thumbnails_folder, exist_ok=True)
+
+@cli.command(**command_config)
+@click.argument('input_path', type=path_config)
+@click.option('--thumbnail', '-t', help='Name of thumbnail folder', default='.thumbnails', show_default=True)
+@click.option('--html', '-h', help='Name of HTML file', default='thumbnails', show_default=True)
+@click.option('--label', '-l', help='Title of the generated HTML file', default='Thumbnails', show_default=True)
+def create(input_path: Path, thumbnail: str, html: str, label: str):
+    """
+    Generate thumbnails of video files.
+    """
+    folder_path = input_path
+
+    thumbnail_path = generate_thumbnail_folder(folder_path, thumbnail)
 
     # Rename
     files = [i for i in os.listdir(folder_path) if os.path.isfile(i)]
     for name in files:
-        rename_file(folder_path, name)
-
-    # dirnames = os.listdir(folder_path)
-    # for file_name in dirnames:
-    #     filepath = os.path.join(folder_path, file_name)
-    #     if os.path.isfile(filepath):
-    #         new_filename = sanitize_filename(file_name)
-    #         if new_filename != file_name:
-    #             os.rename(filepath, os.path.join(folder_path, new_filename))
+        clean_filename(folder_path, name)
 
     dirnames = sorted(os.listdir(folder_path))
     for file_name in dirnames:
-        if file_name.lower().endswith(('.mp4', '.avi', '.mkv', '.mov')):
+        if file_name.lower().endswith(VIDEO_EXTENSIONS):
             video_path = os.path.join(folder_path, file_name)
-            
+
             try:
-                thumbnail_pat, _ = create_thumbnail(video_path, thumbnails_folder)
+                thumbnail_pat, _ = create_thumbnail(video_path, thumbnail_path)
             except Exception:
                 continue
 
             name, ext = os.path.splitext(file_name)
             createlist.append(name)
 
-    create_html(thumbnails_folder, folder_path)
+    create_html(thumbnail_path, folder_path, f'{html}.html', label)
     remove_temp_files()
-    print(f'[COMPLETE]: {total} thumbnails generated.')
+    print(f'[COMPLETE]: {total_created} thumbnails generated.')
+
+
+@cli.command(**command_config)
+@click.argument('input_path', type=path_config)
+@click.argument('video_names')
+@click.option('--folder_name', '-f', help='Folder name to move to', default='__done', show_default=True)
+def done(input_path: Path, video_names: str, folder_name: str):    # noqa
+    """
+    Move watched movies to the DONE folder. File names must be separated by a "::" creating one long string.
+    The complete list of watched videos can be copied from the browser console.
+    """
+    global total_moved
+    destination_path = os.path.join(input_path, folder_name)
+    dataset = set(video_names.split('::'))
+
+    ll = []
+    for file_name in os.listdir(input_path):
+        if file_name.lower().endswith(VIDEO_EXTENSIONS):
+            if file_name in dataset:
+                ll.append(file_name)
+
+    if ll:
+        if not os.path.exists(destination_path):
+            os.makedirs(destination_path)
+
+        for name in ll:
+            try:
+                from_path = os.path.join(input_path, name)
+                to_path = os.path.join(destination_path, name)
+                shutil.move(from_path, to_path)
+                total_moved += 1
+                print(f'[MOVED]: {name}')
+            except Exception as _:
+                pass
+
+    print(f'[COMPLETE]: {total_moved} files moved.')
+
+
+if __name__ == "__main__":
+    cli()

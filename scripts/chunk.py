@@ -4,7 +4,7 @@ import os, sys, shutil, click       # noqa
 from pathlib import Path
 from rich import print
 
-from utils.utils import command_config, path_config, rename_file
+from utils.utils import command_config, path_config, clean_filename
 
 
 __version__ = "0.3.0"
@@ -40,7 +40,7 @@ def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
         raise click.ClickException('You did not provide an input path: Example: chunkfiles .')
     for name in files:
         try:
-            rename_file(folder_path, name)
+            clean_filename(folder_path, name)
         except Exception as e:
             click.echo('Unable to rename file. Skipping.')
 
