@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import os, sys, shutil, typer  # noqa
-from typing_extensions import Annotated
+import os, sys, shutil, click  # noqa
 from pathlib import Path
 from rich import print
 
+from utils.utils import command_config, path_config
 
-__version__ = '0.2.0'
+
+__version__ = '0.3.0'
 errors = {}
 
 
@@ -14,31 +15,22 @@ def is_valid_folder(prefix: str, name: str) -> bool:
     return name.startswith(prefix)
 
 
-def version_callback(show: bool):
-    if show:
-        print(f'Merge CLI version:', __version__)
-        raise typer.Exit()
-
-
 def cleanup_folders(path: str):
     os.rmdir(path)
 
 
-def main(
-        path: Annotated[Path, typer.Argument(help='Folder path', callback=os.path.abspath,
-                                             exists=True, file_okay=False)],
-        prefix: Annotated[str, typer.Option('--prefix', '-p', help='Prefix of each folder chunked folder')] = 'chunk',
-        output: Annotated[Path, typer.Option('--output', '-o', help='Output path', callback=os.path.abspath,
-                                             exists=True, file_okay=False)] = '.',
-        version: Annotated[bool, typer.Option('--version', callback=version_callback, is_eager=True,
-                                              help='Show program version')] = False,
-):
+@click.command(**command_config)
+@click.version_option(__version__, prog_name='mergefiles')
+@click.argument('input_path', type=path_config)
+@click.option('--prefix', '-p', help='Prefix of each folder chunked folder', default='chunk-', show_default=True)
+@click.option('--output', '-o', type=path_config, help='Output path to create subfolders in')
+def main(input_path: Path, prefix: str, output: Path):
     """
-    Collate all the files of subfolders that begin with a prefix. \n
-    Only searches for first-level subfolders.
+    Collate all files in subfolders that have a specific prefix. Only searches for first-level subfolders.\n
+    Works with the chunkfiles script.
     """
-    folder_path = path
-    output_path = output or path
+    folder_path = input_path
+    output_path = output or folder_path
     counter = 0
 
     chunk_folders = [i for i in os.listdir(folder_path) if is_valid_folder(prefix, i)]
@@ -70,4 +62,4 @@ def main(
 
 
 if __name__ == '__main__':
-    typer.run(main)
+    main()

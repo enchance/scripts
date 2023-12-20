@@ -2,8 +2,8 @@
 
 import os, sys, shutil, click       # noqa
 from pathlib import Path
-from click_help_colors import HelpColorsCommand
 from rich import print
+
 from utils.utils import command_config, path_config, rename_file
 
 
@@ -28,7 +28,8 @@ def chunk_it(data: list, n: int):
 def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
     """
     Group all first-level files into subfolders. All subfolders will be serialized and can be customized with any
-    prefix and suffix of your choice.
+    prefix and suffix of your choice. \n
+    Works with the mergefiles script.
     """
     folder_path = input_path
     output = output or folder_path
