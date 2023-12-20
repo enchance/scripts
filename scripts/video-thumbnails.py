@@ -11,7 +11,7 @@ from utils.utils import command_config, path_config, group_config, clean_filenam
 
 # html_filename = 'thumbnails.html'
 # thumb_folder = '.thumbnails'
-__version__ = '0.2.0'
+__version__ = '0.3.1'
 ic = IceCreamDebugger(prefix='')
 PROGRAM_NAME = 'HTML Thumbnail Generator'
 VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv', '.mov', '.webm')
