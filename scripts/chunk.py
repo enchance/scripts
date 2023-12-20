@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-import os, sys, shutil, typer       # noqa
+import os, sys, shutil, click       # noqa
 from pathlib import Path
-from typing_extensions import Annotated
-from typing import Optional
-from pathvalidate import sanitize_filename
+from click_help_colors import HelpColorsCommand
 from rich import print
+from utils.utils import command_config, path_config, rename_file
 
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 errors = {}
 
 
@@ -18,59 +17,31 @@ def chunk_it(data: list, n: int):
         yield data[i:i + n]
 
 
-def rename_file(path: Path, file: str) -> str | None:
-    try:
-        new_file = sanitize_filename(file)
-        new_path = os.path.join(path, new_file)
-        fullpath = os.path.join(path, file)
-        if new_file != file:
-            os.rename(fullpath, new_path)
-        return new_file
-    except Exception:       # noqa
-        errors.setdefault('filenames', [])
-        errors['filenames'].append(file)
-        return None
-
-
-def version_callback(show: bool):
-    if show:
-        print(f'Chunk CLI version:', __version__)
-        raise typer.Exit()
-
-
-def clean_path(path: str):
-    path = os.path.abspath(path)
-    if _ := os.path.isdir(path):
-        return path
-
-    print("Directory doesn't exist")
-    raise typer.Abort()
-
-
-def main(
-        path: Annotated[Path, typer.Argument(help='Folder path', callback=os.path.abspath,
-                                             exists=True, file_okay=False)],
-        count: Annotated[int, typer.Option('--count', '-c', help='Number of files per chunked folder',
-                                           min=2, max=300)] = 110,
-        prefix: Annotated[str, typer.Option('--prefix', '-p', help='Prefix of each folder chunked folder')] = 'chunk-',
-        suffix: Annotated[str, typer.Option('--suffix', '-s', help='Suffix of each folder chunked folder')] = 'x',
-        output: Annotated[Path, typer.Option('--output', '-o', help='Output path', callback=os.path.abspath,
-                                             exists=True, file_okay=False)] = '.',
-        version: Annotated[bool, typer.Option('--version', callback=version_callback, is_eager=True,
-                                              help='Show program version')] = False,
-):
+@click.command(**command_config)
+@click.version_option(__version__, prog_name='chunkfiles')
+@click.argument('input_path', type=path_config)
+@click.option('--count', '-c', help='Number of files per chunked folder', type=click.IntRange(min=2, max=300),
+              default=110, show_default=True)
+@click.option('--prefix', '-p', help='Prefix of each folder chunked folder', default='chunk-', show_default=True)
+@click.option('--suffix', '-s', help='Suffix of each folder chunked folder', default='x', show_default=True)
+@click.option('--output', '-o', type=path_config, help='Output path to create subfolders in')
+def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
     """
-    Group all first-level files into subfolders.
+    Group all first-level files into subfolders. All subfolders will be serialized and can be customized with any
+    prefix and suffix of your choice.
     """
-    folder_path = path
-    output_path = output or path
+    folder_path = input_path
+    output = output or folder_path
 
     # Rename
     files = [i for i in os.listdir(folder_path) if os.path.isfile(i)]
     if not files:
-        raise typer.Exit()
+        raise click.ClickException('You did not provide an input path: Example: chunkfiles .')
     for name in files:
-        rename_file(folder_path, name)
+        try:
+            rename_file(folder_path, name)
+        except Exception as e:
+            click.echo('Unable to rename file. Skipping.')
 
     files = sorted([i for i in os.listdir(folder_path) if os.path.isfile(i)])
     chunks = list(chunk_it(files, count))
@@ -81,12 +52,12 @@ def main(
     for idx, namelist in enumerate(chunks):
         num = idx + 1
         chunk_name = f'{prefix}{num:0{pad}}{suffix}'
-        folder = os.path.join(output_path, chunk_name)
+        folder = os.path.join(output, chunk_name)
 
         os.makedirs(folder, exist_ok=True)
         for name in namelist:
             from_path = os.path.join(folder_path, name)
-            to_path = os.path.join(output_path, chunk_name, name)
+            to_path = os.path.join(output, chunk_name, name)
 
             try:
                 shutil.move(from_path, to_path)
@@ -103,5 +74,5 @@ def main(
 
 
 if __name__ == '__main__':
-    typer.run(main)
+    main()
 

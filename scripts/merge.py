@@ -20,6 +20,10 @@ def version_callback(show: bool):
         raise typer.Exit()
 
 
+def cleanup_folders(path: str):
+    os.rmdir(path)
+
+
 def main(
         path: Annotated[Path, typer.Argument(help='Folder path', callback=os.path.abspath,
                                              exists=True, file_okay=False)],
@@ -53,7 +57,7 @@ def main(
                 errors['unmoved'].append(from_path)
 
         try:
-            os.rmdir(os.path.join(subfolder_path))
+            cleanup_folders(subfolder_path)
         except Exception:   # noqa
             errors.setdefault('undeleted', [])
             errors['undeleted'].append(subfolder_path)
