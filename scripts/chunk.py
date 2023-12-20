@@ -53,6 +53,7 @@ def main(
         count: Annotated[int, typer.Option('--count', '-c', help='Number of files per chunked folder',
                                            min=2, max=300)] = 110,
         prefix: Annotated[str, typer.Option('--prefix', '-p', help='Prefix of each folder chunked folder')] = 'chunk-',
+        suffix: Annotated[str, typer.Option('--suffix', '-s', help='Suffix of each folder chunked folder')] = 'x',
         output: Annotated[Path, typer.Option('--output', '-o', help='Output path', callback=os.path.abspath,
                                              exists=True, file_okay=False)] = '.',
         version: Annotated[bool, typer.Option('--version', callback=version_callback, is_eager=True,
@@ -74,11 +75,12 @@ def main(
     files = sorted([i for i in os.listdir(folder_path) if os.path.isfile(i)])
     chunks = list(chunk_it(files, count))
     pad = len(str(len(chunks)))
+    pad = 2 if pad == 1 else pad
     counter = 0
 
     for idx, namelist in enumerate(chunks):
         num = idx + 1
-        chunk_name = f'{prefix}{num:0{pad}}'
+        chunk_name = f'{prefix}{num:0{pad}}{suffix}'
         folder = os.path.join(output_path, chunk_name)
 
         os.makedirs(folder, exist_ok=True)
