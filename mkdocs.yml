@@ -1,0 +1,39 @@
+site_name: Enchance Scripts
+site_description: Utility scripts for my linux machine
+site_url: https://enchance.github.io/scripts
+repo_name: enchance/scripts
+repo_url: https://github.com/enchance/scripts
+theme:
+  name: material
+  features:
+#    - navigation.tabs
+#    - navigation.tabs.sticky
+    - navigation.footer
+    - content.code.copy
+    - navigation.top
+plugins:
+  - search
+  - social
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - codehilite
+  - extra
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/enchance/scripts
+extra_css:
+  - assets/styles.css
+copyright: Copyright 2023 <a href="https://github.com/enchance"  target="_blank" rel="noopener">Enchance</a>
+nav:
+  - Overview:
+      - Install: install.md
+      - Video Scripts: video.md
