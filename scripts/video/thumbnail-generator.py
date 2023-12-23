@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
 
-import os, sys, click, shutil
+import os, sys, click, shutil       # noqa
 from pathlib import Path
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from urllib.parse import quote, urlparse
-from icecream import IceCreamDebugger
+from rich import print
 
-from utils.utils import command_config, path_config, group_config, clean_filename
+try:
+    sys.path.append(os.environ['ENCHANCE_SCRIPTS'])
+    from utils.utils import command_config, path_config, clean_filename
+except KeyError as e:
+    print("""[cyan]
+Something went wrong. Check the following:
 
+    - Make sure the environment variable [bold]ENCHANCE_SCRIPTS[/bold] is set to the location of the scripts/ folder
+    - The [bold]utils/[/bold] folder is included in your download or the sky will fall on your head 
 
-# html_filename = 'thumbnails.html'
-# thumb_folder = '.thumbnails'
+In your .bashrc file:
+
+    export ENCHANCE_SCRIPTS=<location of scripts/ folder>
+    
+Example:
+
+    export ENCHANCE_SCRIPTS=~/scripts
+[/cyan]""")
+    sys.exit(1)
+
 __version__ = '0.3.1'
-ic = IceCreamDebugger(prefix='')
 PROGRAM_NAME = 'HTML Thumbnail Generator'
 VIDEO_EXTENSIONS = ('.mp4', '.avi', '.mkv', '.mov', '.webm')
 
@@ -29,7 +43,7 @@ def create_thumbnail(video_path, output_folder):
     # Check if thumbnail already exists
     thumbnail_name = os.path.splitext(os.path.basename(video_path))[0] + '_thumbnail.webm'
     thumbnail_path = os.path.join(output_folder, thumbnail_name)
-    
+
     total_duration = VideoFileClip(video_path).duration
 
     if os.path.exists(thumbnail_path):
@@ -52,7 +66,7 @@ def create_thumbnail(video_path, output_folder):
     try:
         # Concatenate the clips into a single thumbnail
         thumbnail = concatenate_videoclips([clip_1, clip_2, clip_3], method="compose").resize(height=150)
-    except Exception as e:
+    except Exception as e:      # noqa
         print(e)
         raise
 
@@ -101,7 +115,7 @@ def generate_html_head(label: str) -> str:
 
 
 def generate_html_tile(tail: str, url_friendly_path: str, thumbnail_path: str, video_name: str,
-                          formatted_duration: str) -> str:
+                       formatted_duration: str) -> str:
     html = f"""
             <li onclick="this.classList.add(\'done\');mark(\'{tail}\', \'{url_friendly_path}\')">
                 <div>
@@ -209,7 +223,7 @@ def create_thumbnails(folder_path: Path, thumbnail: str, html: str, title: str, 
 
 def move_completed(input_path: Path, video_names: str, folder_name: str):    # noqa
     """
-    Move watched movies to the DONE folder. File names must be separated by a "::" creating one long string.
+    Move watched movies to the DONE folder. File names are separated by a "::" creating one long string.
     The complete list of watched videos can be copied from the browser console.
     """
     global total_moved
@@ -251,12 +265,11 @@ def move_completed(input_path: Path, video_names: str, folder_name: str):    # n
               show_default=True)
 def main(input_path: Path, thumbnail: str, html: str, label: str, video_names: str | None, done: str, regenerate: bool):
     """
-    Generate thumbnails of video files and create an html file so they can be viewed. Uses your browser's default
+    Generate thumbnails of video files and create an html file for viewing. Uses your browser's default
     player to watch the videos.\n
 
-    To move all watched videos to your "done" folder paste the string of filenames located in the console in
-    VIDEO_NAMES. Make sure the
-    string is quoted to prevent errors.
+    To move all watched videos to your "--done" folder paste the string of filenames located in the browser console in
+    [VIDEO_NAMES]. Make sure the string is quoted to prevent errors.
     """
     if video_names is None:
         return create_thumbnails(input_path, thumbnail, html, label)

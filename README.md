@@ -8,7 +8,7 @@ Install
 Install necessary dependencies
 
 ```bash
-pip install typer[all] Pillow==10.1.0 moviepy
+pip install click Pillow==10.1.0 moviepy
 ```
 
 
