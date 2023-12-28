@@ -5,25 +5,20 @@ from pathlib import Path
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from urllib.parse import quote, urlparse
 from rich import print
+from dotenv import load_dotenv
+from icecream import IceCreamDebugger
+
+
+
+ic = IceCreamDebugger(prefix='')
+path = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=os.path.join(path, '.env'))
 
 try:
-    sys.path.append(os.environ['ENCHANCE_SCRIPTS'])
+    SCRIPTS_URL = os.environ.get('SCRIPTS_URL')
+    sys.path.append(SCRIPTS_URL)
     from utils.utils import command_config, path_config, clean_filename
 except KeyError as e:
-    print("""[cyan]
-Something went wrong. Check the following:
-
-    - Make sure the environment variable [bold]ENCHANCE_SCRIPTS[/bold] is set to the location of the scripts/ folder
-    - The [bold]utils/[/bold] folder is included in your download or the sky will fall on your head 
-
-In your .bashrc file:
-
-    export ENCHANCE_SCRIPTS=<location of scripts/ folder>
-    
-Example:
-
-    export ENCHANCE_SCRIPTS=~/scripts
-[/cyan]""")
     sys.exit(1)
 
 __version__ = '0.3.1'
