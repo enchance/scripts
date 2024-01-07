@@ -9,13 +9,7 @@ from utils.utils import path_config, command_config, clean_filename
 
 
 __version__ = '0.2.0'
-__progname__ = 'Bulk Merge Compressor'
-
-ic = IceCreamDebugger(prefix='')
-
-def abort_if_false(ctx, param, value):
-    if not value:
-        ctx.abort()
+__progname__ = 'Compressx'
 
 
 @click.command(**command_config)
@@ -24,7 +18,7 @@ def abort_if_false(ctx, param, value):
 @click.argument('input_path', type=path_config)
 @click.argument('added_path', nargs=-1, type=path_config)
 @click.option('--name', '-n', help='File name of the generated compressed file',
-              default='<extension> compressed source',
+              default='<extension> source',
               show_default=True)
 @click.option('--recursive', '-R', help='Scan recursively saving one compressed file per folder',
               type=click.BOOL, is_flag=True)
@@ -33,8 +27,8 @@ def abort_if_false(ctx, param, value):
 def compress_files(extension: str, input_path: Path, added_path: Path, name: str,
                    recursive: bool, delete: bool, hidden: bool):
     """
-    Look for files in a folder and compress them to the tar.gz format.
-    One compressed file will be generated per folder.
+    Scan for files having a specific extension and compress them to the tar.gz format
+    for easier archiving. One compressed file will be generated per folder.
     """
     def _is_valid(file_: str) -> bool:
         return file_.lower().endswith(f'.{extension.lower()}')
@@ -43,9 +37,11 @@ def compress_files(extension: str, input_path: Path, added_path: Path, name: str
         total = 0
         if datalist:
             rel_path = os.path.relpath(folder_path_)
+
+            # Compress
             with chdir(rel_path):
                 folder = os.path.basename(Path(rel_path))
-                fill_char = click.style("#", fg="green")
+                fill_char = click.style("*", fg="green")
                 empty_char = click.style("-", fg="white", dim=True)
                 d = dict(label=f'Compressing {folder}:', fill_char=fill_char, empty_char=empty_char)
 
@@ -65,11 +61,11 @@ def compress_files(extension: str, input_path: Path, added_path: Path, name: str
             click.echo(f'No {extension.upper()} files found.')
         return total
 
-    if delete := delete and click.confirm(f'Confirm deletion of source files?'):
-        pass
-
     name = name.replace('<extension>', extension.upper())
     output_file = f'{name}.tar.gz'
+
+    if delete := delete and click.confirm(f'Confirm deletion of source files?'):
+        pass
 
     count = 0
     for path in [input_path, *list(added_path)]:        # noqa
