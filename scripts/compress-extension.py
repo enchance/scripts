@@ -8,7 +8,7 @@ from icecream import IceCreamDebugger
 from utils.utils import path_config, command_config, clean_filename
 
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 __progname__ = 'Bulk Merge Compressor'
 
 ic = IceCreamDebugger(prefix='')
@@ -36,19 +36,10 @@ def compress_files(extension: str, input_path: Path, added_path: Path, name: str
     Look for files in a folder and compress them to the tar.gz format.
     One compressed file will be generated per folder.
     """
-    # ic(delete)
-    # sys.exit(1)
-
     def _is_valid(file_: str) -> bool:
         return file_.lower().endswith(f'.{extension.lower()}')
 
-    def _is_hidden(filepath) -> bool:
-        return os.path.basename(folder_path).startswith(".")
-
     def _scan_and_compress(folder_path_: Path, datalist: list[str], output_file_: str) -> int:
-        # ic(type(current_folder_), current_folder_)
-        # ic(type(datalist), datalist)
-
         total = 0
         if datalist:
             rel_path = os.path.relpath(folder_path_)
@@ -71,7 +62,7 @@ def compress_files(extension: str, input_path: Path, added_path: Path, name: str
                     for f in datalist:
                         os.remove(f)
         else:
-            ic(f'No {extension.upper()} files found.')
+            click.echo(f'No {extension.upper()} files found.')
         return total
 
     if delete := delete and click.confirm(f'Confirm deletion of source files?'):
@@ -85,7 +76,7 @@ def compress_files(extension: str, input_path: Path, added_path: Path, name: str
         if recursive:
             for current_folder, dirnames, files in os.walk(path):
                 folder_path = Path(current_folder)
-                if not hidden and _is_hidden(folder_path):
+                if not hidden and os.path.basename(folder_path).startswith("."):
                     continue
                 valid_files = [i for i in files if _is_valid(i)]
                 count += _scan_and_compress(folder_path, valid_files, output_file)
