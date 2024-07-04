@@ -246,6 +246,7 @@ def move_completed(input_path: Path, video_names: str, folder_name: str):    # n
                 pass
 
     print(f'[COMPLETE]: {total_moved} files moved')
+    sys.exit(1)
 
 
 @click.command(**command_config)
