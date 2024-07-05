@@ -1,17 +1,38 @@
 #!/bin/bash
 
+# After modifying this script always run:
+#   sudo systemctl daemon-reload && sudo systemctl restart batterymon.service
+
 # Configuration
 NOTIFY_METHOD="libnotify"  # Can be "libnotify" or "zenity"
+CUTOFF=50
 
 # Function to get battery percentage
 get_battery_percentage() {
-    upower -i $(upower -e | grep BAT) | grep percentage | awk '{print $2}' | tr -d '%'
+    local percentage=$(upower -i $(upower -e | grep BAT) | grep percentage | awk '{print $2}' | tr -d '%')
+    if [[ -z "$percentage" ]]; then
+        echo "Error: Couldn't determine battery percentage" >&2
+        echo "-1"
+    else
+        echo "$percentage"
+    fi
 }
 
 # Function to check if battery is charging
 is_battery_charging() {
     local state=$(upower -i $(upower -e | grep BAT) | grep state | awk '{print $2}')
-    [[ "$state" == "charging" ]]
+    if [[ -z "$state" ]]; then
+        echo "Error: Couldn't determine battery state" >&2
+        echo "-1"  # Return a special value to indicate an error
+    elif [[ "$state" == "charging" ]]; then
+        echo "1"
+    else
+        echo "0"
+    fi
+}
+
+log_message() {
+    echo "$(date): $1" >> ~/Dev/repos/scripts/scripts/logs/batterymon_logs.log
 }
 
 # Function to send notification
@@ -38,15 +59,9 @@ get_check_interval() {
 
 # Initialize variables to track if notifications have been sent
 declare -A notified
-notified[10]=false
-notified[12]=false
-notified[15]=false
-notified[20]=false
-notified[25]=false
-notified[80]=false
-notified[85]=false
-notified[90]=false
-notified[100]=false
+for key in 5 8 10 12 15 20 25 75 80 85 90 100; do
+    notified[$key]=false
+done
 
 # Initialize previous battery level
 previous_level=-1
@@ -56,19 +71,27 @@ while true; do
     charging=$(is_battery_charging)
     check_interval=$(get_check_interval "$battery_level")
 
-    for threshold in 10 12 15 20 25 80 85 90 100; do
-        if [[ $battery_level -eq $threshold ]]; then
+    if [[ $battery_level -eq -1 ]]; then
+        log_message "Error occurred while checking battery level. Skipping this iteration."
+        continue
+    fi
+
+    if [[ $charging -eq -1 ]]; then
+        log_message "Error occurred while checking battery status. Skipping this iteration."
+        continue
+    fi
+
+    for threshold in 5 8 10 12 15 20 25 75 80 85 90 100; do
+#        if [[ $battery_level -eq $threshold ]]; then
+        if [[ $battery_level -eq $threshold && ${notified[$threshold]} == false ]]; then
             should_notify=false
 
-#            if [[ $charging == true && $threshold -ge 50 && $previous_level -lt $battery_level ]]; then
-            if [[ $threshold -ge 50 && $previous_level -lt $battery_level ]]; then
-                should_notify=true
-#            elif [[ $charging == false && $threshold -lt 50 && $previous_level -gt $battery_level ]]; then
-            elif [[ $threshold -lt 50 && $previous_level -gt $battery_level ]]; then
+            if [[ ($charging -eq 1 && $threshold -ge $CUTOFF && $previous_level -lt $battery_level) ||
+                  ($charging -eq 0 && $threshold -lt $CUTOFF && $previous_level -gt $battery_level) ]]; then
                 should_notify=true
             fi
 
-            if [[ $should_notify == true && ${notified[$threshold]} == false ]]; then
+            if [[ $should_notify == true ]]; then
                 if [[ $threshold -eq 80 || $threshold -eq 85 ]]; then
                     message="Time to stop charging. Stopping at 80% will extend your battery life."
                 elif [[ $threshold -eq 90 || $threshold -eq 100 ]]; then
@@ -79,8 +102,10 @@ while true; do
 
                 send_notification "$threshold" "$message"
                 notified[$threshold]=true
+
+                log_message "Status: $charging, Battery level: $battery_level, Previous: $previous_level"
             fi
-        else
+        elif [[ $battery_level -ne $threshold ]]; then
             notified[$threshold]=false
         fi
     done

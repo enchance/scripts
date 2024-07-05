@@ -1,5 +1,5 @@
 [Unit]
-Description=Battery Level Notification
+Description=Battery Level Monitor
 After=graphical-session.target
 
 [Service]
@@ -7,7 +7,7 @@ Type=simple
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/enchance/.Xauthority
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-ExecStart=/bin/bash /home/enchance/Dev/repos/scripts/scripts/battery-notif.sh
+ExecStart=/bin/bash /home/enchance/Dev/repos/scripts/scripts/batterymon.sh
 Restart=always
 User=1000
 Group=1000
