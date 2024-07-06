@@ -59,7 +59,7 @@ get_check_interval() {
 
 # Initialize variables to track if notifications have been sent
 declare -A notified
-for key in 5 8 10 12 15 20 25 75 80 85 90 100; do
+for key in 5 8 10 14 16 18 20 25 75 80 83 85 87 88 90 100; do
     notified[$key]=false
 done
 
@@ -81,15 +81,22 @@ while true; do
         continue
     fi
 
-    for threshold in 5 8 10 12 15 20 25 75 80 85 90 100; do
-#        if [[ $battery_level -eq $threshold ]]; then
+    for threshold in 5 8 10 14 16 18 20 25 75 80 83 85 87 88 90 100; do
         if [[ $battery_level -eq $threshold && ${notified[$threshold]} == false ]]; then
             should_notify=false
 
-            if [[ ($charging -eq 1 && $threshold -ge $CUTOFF && $previous_level -lt $battery_level) ||
-                  ($charging -eq 0 && $threshold -lt $CUTOFF && $previous_level -gt $battery_level) ]]; then
+            if [[ $charging -eq 1 && $threshold -ge $CUTOFF && $previous_level -lt $battery_level ]]; then
                 should_notify=true
+                charging='charging'
+            elif [[ $charging -eq 0 && $threshold -lt $CUTOFF && $previous_level -gt $battery_level ]]; then
+                should_notify=true
+                charging='discharging'
             fi
+
+#            if [[ ($charging -eq 1 && $threshold -ge $CUTOFF && $previous_level -lt $battery_level) ||
+#                  ($charging -eq 0 && $threshold -lt $CUTOFF && $previous_level -gt $battery_level) ]]; then
+#                should_notify=true
+#            fi
 
             if [[ $should_notify == true ]]; then
                 if [[ $threshold -eq 80 || $threshold -eq 85 ]]; then
@@ -102,8 +109,7 @@ while true; do
 
                 send_notification "$threshold" "$message"
                 notified[$threshold]=true
-
-                log_message "Status: $charging, Battery level: $battery_level, Previous: $previous_level"
+                log_message "Status: $charging, Now: $battery_level, Prev: $previous_level"
             fi
         elif [[ $battery_level -ne $threshold ]]; then
             notified[$threshold]=false
