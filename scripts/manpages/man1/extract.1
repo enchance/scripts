@@ -1,65 +1,80 @@
-.TH EXTRACT 1 "July 2024" "1.0" "User Commands"
+.TH EXTRACT 1 "July 2024" "Version 1.0" "User Commands"
 .SH NAME
-extract \- Extract a compressed file or a folder of compressed files
-
+extract \- extract compressed archives
 .SH SYNOPSIS
 .B extract
-[\fIOPTIONS\fP] \fIFILE|DIRECTORY\fP
-
+[\fIOPTIONS\fR] \fIFILE\fR|\fIDIRECTORY\fR
 .SH DESCRIPTION
-The \fBextract\fP script allows you to extract various compressed file formats, either individually or recursively within a directory. 
-
+.B extract
+is a utility for extracting compressed archives. It supports various archive formats and can process both individual files and directories.
 .SH OPTIONS
 .TP
-.B \-r, \--recursive
-Process directories recursively.
+.BR \-r ", " \-\-recursive
+Recursively process subdirectories when extracting from a directory.
 .TP
-.B \-d, \--delete
-Delete original archive after successful extraction.
+.BR \-d ", " \-\-delete
+Delete the original archive file after successful extraction.
 .TP
-.B \-v, \--verbose
-Show detailed output of the extraction process.
+.BR \-v ", " \-\-verbose
+Display detailed information about the extraction process.
 .TP
-.B \--dry-run
-Show what would be extracted without actually performing the extraction.
+.B \-\-dry\-run
+Show what would be done without actually extracting files.
 .TP
-.B \-f, \--format \fIFMT\fP
-Specify formats to extract when processing a directory. This should be a comma-separated list, e.g., 'zip,tar.gz'.
-
-.SH USAGE
-.TP
-.B extract file.zip
-Extract a single zip file.
-.TP
-.B extract \-d file.tar.gz
-Extract a tar.gz file and delete the original archive after extraction.
-.TP
-.B extract \-r \-f zip,tar.gz /path/to/directory
-Recursively process the directory for zip and tar.gz files.
-
+.BR \-f ", " \-\-format =\fIFORMAT\fR
+Specify the archive format(s) to process when extracting from a directory. Multiple formats can be specified, separated by commas.
+.SH SUPPORTED FORMATS
+tar, gz, tgz, bz2, tbz2, xz, txz, zip, 7z, rar
+.SH BEHAVIOR
+.IP 1. 4
+When extracting a single archive file:
+.RS
+.IP \(bu 2
+Extracts to a folder with the same name as the archive (without extension) in the same directory as the archive.
+.IP \(bu
+If a folder with the same name already exists, appends a random 6-character hash to the folder name.
+.RE
+.IP 2. 4
+When processing a directory:
+.RS
+.IP \(bu
+Only processes files with formats specified by the -f option.
+.IP \(bu
+If -r is used, recursively processes subdirectories.
+.RE
 .SH EXAMPLES
 .TP
-.B extract file.zip
-Extracts the contents of \fBfile.zip\fP in the current directory.
-.TP
-.B extract \-d file.tar.gz
-Extracts the contents of \fBfile.tar.gz\fP in the current directory and deletes the original archive after extraction.
+.B extract archive.zip
+Extracts archive.zip to a folder named archive in the current directory.
 .TP
 .B extract \-r \-f zip,tar.gz /path/to/directory
-Recursively extracts files with the extensions zip and tar.gz in the specified directory.
-
+Recursively extracts all .zip and .tar.gz files in /path/to/directory and its subdirectories.
+.TP
+.B extract \-d \-v largefile.tar.gz
+Extracts largefile.tar.gz, displays verbose output, and deletes the original archive upon successful extraction.
+.TP
+.B extract \-\-dry\-run \-f zip /downloads
+Shows what would be extracted from all .zip files in the /downloads directory without actually extracting them.
+.SH NOTES
+.IP \(bu 2
+When processing a directory, the -f option is required to specify which archive formats to extract.
+.IP \(bu
+The function requires appropriate permissions to create directories and move files.
 .SH AUTHOR
 Written by enchance.
 
-.SH ENVIRONMENT
-The script relies on the presence of certain tools to extract different file formats:
-- \fBunzip\fP for .zip files
-- \fB7z\fP for .7z files
-- \fBunrar\fP for .rar files
-- \fBtar\fP for tar-based formats (e.g., .tar, .gz, .bz2, .xz)
-
-.SH BUGS
-Report any bugs to enchance.
+.SH REPORTING BUGS
+Report bugs to your local 7-11.
 
 .SH COPYRIGHT
-This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
+Copyright © 2024 enchance.
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH SEE ALSO
+.BR tar (1),
+.BR gzip (1),
+.BR bzip2 (1),
+.BR xz (1),
+.BR unzip (1),
+.BR 7z (1),
+.BR unrar (1)
