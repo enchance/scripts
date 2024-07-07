@@ -1,0 +1,69 @@
+.TH fixperms 1 "July 2024" "1.0" "fixperms Manual"
+.SH NAME
+fixperms \- set the proper permissions recursively
+.SH SYNOPSIS
+.B fixperms
+.RI [ --dir " DIR_PERMS" ]
+.RI [ --file " FILE_PERMS" ]
+.I /path/to/project/folder
+.SH DESCRIPTION
+The
+.B fixperms
+function sets the specified permissions for directories and files recursively within a given project directory.
+
+By default, directories will be set to 755 and files to 644 unless otherwise specified with the
+.BR --dir " and " --file " options."
+
+.SH OPTIONS
+.TP
+.BR --dir " DIR_PERMS"
+Specify the permissions for directories. Default is 755.
+.TP
+.BR --file " FILE_PERMS"
+Specify the permissions for files. Default is 644.
+.TP
+.I /path/to/project/folder
+The path to the project directory for which the permissions will be set.
+
+.SH EXAMPLES
+.TP
+Set the default permissions (755 for directories and 644 for files):
+.B
+fixperms /path/to/project/folder
+.TP
+Set custom permissions for directories and files:
+.B
+fixperms --dir 750 --file 640 /path/to/project/folder
+.TP
+Attempt to run the function without specifying the project path:
+.B
+fixperms --dir 750
+.br
+Error: You forgot to provide the path to the project folder
+
+.SH AUTHOR
+.B enchance
+.SH NOTES
+The
+.B fixperms
+function requires confirmation before making changes to the permissions. The function also checks if the provided path exists and is a directory.
+.P
+If the provided path does not exist or is not a directory, the function will return an error.
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful execution.
+.TP
+.B 1
+An error occurred (e.g., invalid path, operation cancelled).
+
+.SH SEE ALSO
+.BR chmod (1),
+.BR find (1)
+
+.SH BUGS
+No known bugs.
+
+.SH COPYRIGHT
+2024, enchance

@@ -1,0 +1,51 @@
+.TH VERIFYHASH 1 "July 2024" "1.0" "verifyhash man page"
+.SH NAME
+verifyhash \- verify the hash of a file
+
+.SH SYNOPSIS
+.B verifyhash
+[\-t | \-\-type \fIhash_type\fR]
+[\-h | \-\-hash \fIexpected_hash\fR]
+\fIfilename\fR
+
+.SH DESCRIPTION
+.B verifyhash
+calculates the hash of a file using one of the specified algorithms (sha1, sha256, md5) and compares it with the expected hash value.
+
+.SH OPTIONS
+.TP
+.B \-t, \-\-type \fIhash_type\fR
+Specify the hash algorithm to use. Supported values are sha1, sha256, or md5.
+
+.TP
+.B \-h, \-\-hash \fIexpected_hash\fR
+Specify the expected hash value to compare against the calculated hash.
+
+.SH EXAMPLES
+Calculate the SHA-256 hash of a file:
+.PP
+.B verifyhash \-t sha256 \-h 2a2d21e1e74e8d40223f70eac6c5e8a5d22f1e845dc9b9a7d9672f0f28c5a300 file.txt
+
+.SH EXIT STATUS
+.B verifyhash
+exits with a status of 0 on success or 1 on failure.
+
+.SH AUTHOR
+Written by enchance.
+
+.SH REPORTING BUGS
+Report bugs to your local 7-11.
+
+.SH COPYRIGHT
+Copyright © 2024 enchance.
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+.SH SEE ALSO
+.BR sha1sum (1),
+.BR sha256sum (1),
+.BR md5sum (1)
+
+.SH NOTES
+This manual page was written with the intention of being clear and concise. If you find any errors or have suggestions for improvement, please let us know.
+

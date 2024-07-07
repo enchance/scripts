@@ -1,0 +1,65 @@
+.TH EXTRACT 1 "July 2024" "1.0" "User Commands"
+.SH NAME
+extract \- Extract a compressed file or a folder of compressed files
+
+.SH SYNOPSIS
+.B extract
+[\fIOPTIONS\fP] \fIFILE|DIRECTORY\fP
+
+.SH DESCRIPTION
+The \fBextract\fP script allows you to extract various compressed file formats, either individually or recursively within a directory. 
+
+.SH OPTIONS
+.TP
+.B \-r, \--recursive
+Process directories recursively.
+.TP
+.B \-d, \--delete
+Delete original archive after successful extraction.
+.TP
+.B \-v, \--verbose
+Show detailed output of the extraction process.
+.TP
+.B \--dry-run
+Show what would be extracted without actually performing the extraction.
+.TP
+.B \-f, \--format \fIFMT\fP
+Specify formats to extract when processing a directory. This should be a comma-separated list, e.g., 'zip,tar.gz'.
+
+.SH USAGE
+.TP
+.B extract file.zip
+Extract a single zip file.
+.TP
+.B extract \-d file.tar.gz
+Extract a tar.gz file and delete the original archive after extraction.
+.TP
+.B extract \-r \-f zip,tar.gz /path/to/directory
+Recursively process the directory for zip and tar.gz files.
+
+.SH EXAMPLES
+.TP
+.B extract file.zip
+Extracts the contents of \fBfile.zip\fP in the current directory.
+.TP
+.B extract \-d file.tar.gz
+Extracts the contents of \fBfile.tar.gz\fP in the current directory and deletes the original archive after extraction.
+.TP
+.B extract \-r \-f zip,tar.gz /path/to/directory
+Recursively extracts files with the extensions zip and tar.gz in the specified directory.
+
+.SH AUTHOR
+Written by enchance.
+
+.SH ENVIRONMENT
+The script relies on the presence of certain tools to extract different file formats:
+- \fBunzip\fP for .zip files
+- \fB7z\fP for .7z files
+- \fBunrar\fP for .rar files
+- \fBtar\fP for tar-based formats (e.g., .tar, .gz, .bz2, .xz)
+
+.SH BUGS
+Report any bugs to enchance.
+
+.SH COPYRIGHT
+This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
