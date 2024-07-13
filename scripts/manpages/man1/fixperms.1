@@ -1,69 +1,58 @@
-.TH fixperms 1 "July 2024" "1.0" "fixperms Manual"
+.TH FIXPERMS 1 "July 2024" "1.0" "User Commands"
 .SH NAME
-fixperms \- set the proper permissions recursively
+fixperms \- change permissions and ownership for a project directory
+
 .SH SYNOPSIS
 .B fixperms
-.RI [ --dir " DIR_PERMS" ]
-.RI [ --file " FILE_PERMS" ]
-.I /path/to/project/folder
-.SH DESCRIPTION
-The
-.B fixperms
-function sets the specified permissions for directories and files recursively within a given project directory.
+[\fB\-\-dir\fP DIR_PERMS] [\fB\-\-file\fP FILE_PERMS] [\fB\-\-owner\fP OWNER] [\fB\-\-group\fP GROUP] [\fB\-\-me\fP] /path/to/project/folder
 
-By default, directories will be set to 755 and files to 644 unless otherwise specified with the
-.BR --dir " and " --file " options."
+.SH DESCRIPTION
+.B fixperms
+is a script to change the permissions and ownership of all files and directories within a specified project directory.
 
 .SH OPTIONS
 .TP
-.BR --dir " DIR_PERMS"
-Specify the permissions for directories. Default is 755.
+\fB\-\-dir\fP DIR_PERMS
+Set permissions for directories. Defaults to 755.
 .TP
-.BR --file " FILE_PERMS"
-Specify the permissions for files. Default is 644.
+\fB\-\-file\fP FILE_PERMS
+Set permissions for files. Defaults to 644.
 .TP
-.I /path/to/project/folder
-The path to the project directory for which the permissions will be set.
+\fB\-\-owner\fP OWNER
+Set the owner of files and directories.
+.TP
+\fB\-\-group\fP GROUP
+Set the group of files and directories.
+.TP
+\fB\-\-me\fP
+Use the current user as the owner and group.
+
+.SH USAGE
+sudo fixperms [\fB\-\-dir DIR_PERMS\fP] [\fB\-\-file FILE_PERMS\fP] [\fB\-\-owner OWNER\fP] [\fB\-\-group GROUP\fP] [\fB\-\-me\fP] /path/to/project/folder
 
 .SH EXAMPLES
 .TP
-Set the default permissions (755 for directories and 644 for files):
+Set directory permissions to 750, file permissions to 640, owner to "user", and group to "group" for the project directory "/path/to/project":
 .B
-fixperms /path/to/project/folder
+sudo fixperms --dir 750 --file 640 --owner user --group group /path/to/project
 .TP
-Set custom permissions for directories and files:
+Set directory and file permissions using the current user and group for the project directory "/path/to/project":
 .B
-fixperms --dir 750 --file 640 /path/to/project/folder
-.TP
-Attempt to run the function without specifying the project path:
-.B
-fixperms --dir 750
-.br
-Error: You forgot to provide the path to the project folder
+sudo fixperms --me /path/to/project
+
+.SH NOTES
+The script will prompt for confirmation before applying changes. It requires sudo privileges to change permissions and ownership.
 
 .SH AUTHOR
-.B enchance
-.SH NOTES
-The
-.B fixperms
-function requires confirmation before making changes to the permissions. The function also checks if the provided path exists and is a directory.
-.P
-If the provided path does not exist or is not a directory, the function will return an error.
+Written by enchance.
 
-.SH EXIT STATUS
-.TP
-.B 0
-Successful execution.
-.TP
-.B 1
-An error occurred (e.g., invalid path, operation cancelled).
-
-.SH SEE ALSO
-.BR chmod (1),
-.BR find (1)
-
-.SH BUGS
-No known bugs.
+.SH REPORTING BUGS
+Report bugs to your local 7-11.
 
 .SH COPYRIGHT
-2024, enchance
+Copyright © 2024 enchance.
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+.SH SEE ALSO
+chmod(1), chown(1), find(1)
