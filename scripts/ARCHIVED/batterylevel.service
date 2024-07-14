@@ -1,0 +1,10 @@
+[Unit]
+Description=Send alerts on low battery starting at 25%. Designed for silverlance.
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/enchance/.scripts/batterylevel-warning.sh
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
