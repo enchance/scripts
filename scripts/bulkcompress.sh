@@ -1,15 +1,12 @@
 #!/bin/bash
 
-
 # Initialize variables
 format="tar.gz"
 unique=false
 delete=false
 dry_run=false
-verbose=false
 prefix=""
 suffix=""
-all=false
 with_hash=false
 full_stop=false
 
@@ -35,6 +32,7 @@ compress_folder() {
     if [ -e "$output_file.$format" ] && $unique; then
         local hash=$(generate_hash)
         output_file="${output_file}_${hash}"
+        output_name="${output_name}_${hash}"
     fi
 
     # Append format extension
@@ -43,10 +41,6 @@ compress_folder() {
     if $dry_run; then
         echo "Would compress '$folder' to '$output_file'"
         return 0
-    fi
-
-    if $verbose; then
-        echo "Compressing '$folder' to '$output_file'"
     fi
 
     case $format in
@@ -64,9 +58,10 @@ compress_folder() {
         echo "Error compressing '$folder'"
         return 1
     fi
+    echo "$output_name.$format"
 
     if $with_hash; then
-        (cd "$output_dir" && sha1sum "$(basename "$output_file")" >> sha1-keys)
+        (cd "$output_dir" && sha256sum "$(basename "$output_file")" >> sha256-keys)
     fi
 
     if $delete; then
@@ -85,7 +80,7 @@ compress_folder() {
 }
 
 # Parse command-line options
-TEMP=$(getopt -o f:udv:p:s:ah --long format:,unique,delete,dry-run,verbose,prefix:,suffix:,all,with-hash,full-stop,help -n "$0" -- "$@")
+TEMP=$(getopt -o f:udp:s: --long format:,unique,delete,dry-run,prefix:,suffix:,with-hash,full-stop -n "$0" -- "$@")
 eval set -- "$TEMP"
 
 while true; do
@@ -98,20 +93,14 @@ while true; do
             delete=true; shift ;;
         --dry-run)
             dry_run=true; shift ;;
-        -v|--verbose)
-            verbose=true; shift ;;
         -p|--prefix)
             prefix="$2"; shift 2 ;;
         -s|--suffix)
             suffix="$2"; shift 2 ;;
-        -a|--all)
-            all=true; shift ;;
         --with-hash)
             with_hash=true; shift ;;
         --full-stop)
             full_stop=true; shift ;;
-        -h|--help)
-            print_usage; exit 0 ;;
         --)
             shift; break ;;
         *)
@@ -140,14 +129,13 @@ for main_folder in "$@"; do
             continue
         fi
 
-        base_name=$(basename "$folder")
-        if [ ! "$all" ] && [[ $base_name == .* ]]; then
-            echo "Found $base_name"
-            continue
-        fi
+#        base_name=$(basename "$folder")
+#        if [ ! $all ] && [[ $base_name == .* ]]; then
+#            continue
+#        fi
 
         if [ -z "$(ls -A "$folder")" ]; then
-            echo "Warning: '$folder' is empty."
+            echo "'$folder' is empty. Skipping."
             continue
         fi
 

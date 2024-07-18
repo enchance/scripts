@@ -6,7 +6,7 @@ bulkcompress \- compress first-level folders within specified directories
 [\fIOPTIONS\fR] \fIDIRECTORY\fR...
 .SH DESCRIPTION
 .B bulkcompress
-is a tool for compressing multiple first-level folders within specified directories. It can handle different compression formats, add unique identifiers to avoid overwriting, delete original folders after compression, and generate SHA1 hashes for compressed files.
+is a tool for compressing multiple first-level folders within specified directories. It can handle different compression formats, add unique identifiers to avoid overwriting, delete original folders after compression, and generate SHA256 hashes for compressed files.
 .SH OPTIONS
 .TP
 .BR \-f ", " \-\-format " " \fIFORMAT\fR
@@ -28,17 +28,11 @@ Add PREFIX to compressed filenames.
 .BR \-s ", " \-\-suffix " " \fISUFFIX\fR
 Add SUFFIX to compressed filenames.
 .TP
-.BR \-a ", " \-\-all
-Include hidden folders in the compression process. When compressing hidden folders, the leading dot is removed from the compressed filename.
-.TP
 .BR \-\-with\-hash
-Generate SHA1 hash for each compressed file and save in a file named sha1-keys in the same directory as the compressed file.
+Generate SHA256 hash for each compressed file and save in a file named sha256-keys in the same directory as the compressed file.
 .TP
 .BR \-\-full\-stop
 Stop processing if an error occurs during compression of any folder.
-.TP
-.BR \-h ", " \-\-help
-Display help message and exit.
 .SH EXAMPLES
 .TP
 Compress first-level folders in multiple directories using the default format (tar.gz):
@@ -50,8 +44,8 @@ Compress first-level folders using zip format and delete original folders:
 Compress first-level folders, adding a unique identifier if files already exist:
 .B bulkcompress -u directory1 directory2
 .TP
-Compress all first-level folders (including hidden) and generate SHA1 hashes:
-.B bulkcompress -a --with-hash directory1 directory2
+Compress all first-level folders and generate SHA256 hashes:
+.B bulkcompress --with-hash directory1 directory2
 .TP
 Perform a dry run to see what would be compressed:
 .B bulkcompress --dry-run directory1
