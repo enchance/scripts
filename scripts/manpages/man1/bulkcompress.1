@@ -1,0 +1,80 @@
+.TH BULKCOMPRESS 1 "July 2024" "Version 1.2" "User Commands"
+.SH NAME
+bulkcompress \- compress first-level folders within specified directories
+.SH SYNOPSIS
+.B bulkcompress
+[\fIOPTIONS\fR] \fIDIRECTORY\fR...
+.SH DESCRIPTION
+.B bulkcompress
+is a tool for compressing multiple first-level folders within specified directories. It can handle different compression formats, add unique identifiers to avoid overwriting, delete original folders after compression, and generate SHA1 hashes for compressed files.
+.SH OPTIONS
+.TP
+.BR \-f ", " \-\-format " " \fIFORMAT\fR
+Specify the compression format. Supported formats are zip, rar, tar.gz, tar.bz2, 7z, iso, and cbz. Default is tar.gz.
+.TP
+.BR \-u ", " \-\-unique
+Add a unique 4-character hash to the filename if it already exists.
+.TP
+.BR \-d ", " \-\-delete
+Delete the original folder after successful compression. Will not delete the current working directory.
+.TP
+.BR \-\-dry\-run
+Show what would be done without actually performing any actions.
+
+.TP
+.BR \-p ", " \-\-prefix " " \fIPREFIX\fR
+Add PREFIX to compressed filenames.
+.TP
+.BR \-s ", " \-\-suffix " " \fISUFFIX\fR
+Add SUFFIX to compressed filenames.
+.TP
+.BR \-a ", " \-\-all
+Include hidden folders in the compression process. When compressing hidden folders, the leading dot is removed from the compressed filename.
+.TP
+.BR \-\-with\-hash
+Generate SHA1 hash for each compressed file and save in a file named sha1-keys in the same directory as the compressed file.
+.TP
+.BR \-\-full\-stop
+Stop processing if an error occurs during compression of any folder.
+.TP
+.BR \-h ", " \-\-help
+Display help message and exit.
+.SH EXAMPLES
+.TP
+Compress first-level folders in multiple directories using the default format (tar.gz):
+.B bulkcompress directory1 directory2 directory3
+.TP
+Compress first-level folders using zip format and delete original folders:
+.B bulkcompress -f zip -d directory1 directory2
+.TP
+Compress first-level folders, adding a unique identifier if files already exist:
+.B bulkcompress -u directory1 directory2
+.TP
+Compress all first-level folders (including hidden) and generate SHA1 hashes:
+.B bulkcompress -a --with-hash directory1 directory2
+.TP
+Perform a dry run to see what would be compressed:
+.B bulkcompress --dry-run directory1
+.SH NOTES
+The script compresses only the first-level folders within the specified directories. It does not compress the specified directories themselves.
+
+When using the -d (delete) option, the script will not delete a folder if it is the current working directory.
+
+When compressing hidden folders (with the -a option), the leading dot is removed from the compressed filename. For example, .hidden/ becomes hidden.tar.gz.
+.SH EXIT STATUS
+The bulkcompress utility exits 0 on success, and >0 if an error occurs.
+.SH AUTHOR
+Written by enchance.
+
+.SH REPORTING BUGS
+Report bugs to your local 7-11.
+.SH COPYRIGHT
+Copyright © 2024 enchance.
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH SEE ALSO
+.BR zip (1),
+.BR rar (1),
+.BR tar (1),
+.BR 7z (1),
+.BR mkisofs (1)
