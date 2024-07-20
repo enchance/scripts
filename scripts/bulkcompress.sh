@@ -61,7 +61,7 @@ compress_folder() {
     echo "$output_name.$format"
 
     if $with_hash; then
-        (cd "$output_dir" && sha256sum "$(basename "$output_file")" >> sha256-keys)
+        (cd "$output_dir" && sha256sum "$(basename "$output_file")" >> sha256-checksum)
     fi
 
     if $delete; then
