@@ -59,7 +59,7 @@ get_check_interval() {
 
 # Initialize variables to track if notifications have been sent
 declare -A notified
-for key in 5 8 10 14 16 18 20 25 75 80 83 85 87 88 90 100; do
+for key in 5 8 10 14 16 18 20 22 25 80 83 85 87 88 90 100; do
     notified[$key]=false
 done
 
@@ -81,7 +81,7 @@ while true; do
         continue
     fi
 
-    for threshold in 5 8 10 14 16 18 20 25 75 80 83 85 87 88 90 100; do
+    for threshold in 5 8 10 14 16 18 20 22 25 80 83 85 87 88 90 100; do
         if [[ $battery_level -eq $threshold && ${notified[$threshold]} == false ]]; then
             should_notify=false
 

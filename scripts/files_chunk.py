@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import os, sys, shutil, click       # noqa
+import os, sys, shutil, click  # noqa
 from pathlib import Path
 from rich import print
 
 from utils.utils import command_config, path_config, clean_filename
-
 
 __version__ = "0.3.0"
 errors = {}
@@ -22,10 +21,12 @@ def chunk_it(data: list, n: int):
 @click.argument('input_path', type=path_config)
 @click.option('--count', '-c', help='Number of files per chunked folder', type=click.IntRange(min=2, max=300),
               default=110, show_default=True)
-@click.option('--prefix', '-p', help='Prefix of each folder chunked folder', default='chunk-', show_default=True)
-@click.option('--suffix', '-s', help='Suffix of each folder chunked folder', default='x', show_default=True)
+@click.option('--start', '-s', type=click.IntRange(min=0, max=30000), help='Starting folder number', default=1,
+              show_default=True)
+@click.option('--prefix', help='Prefix of each folder chunked folder', default='chunk-', show_default=True)
+@click.option('--suffix', help='Suffix of each folder chunked folder', default='x', show_default=True)
 @click.option('--output', '-o', type=path_config, help='Output path to create subfolders in')
-def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
+def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path, start: int):
     """
     Group all first-level files into subfolders. All subfolders will be serialized and can be customized with any
     prefix and suffix of your choice. \n
@@ -51,7 +52,7 @@ def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
     counter = 0
 
     for idx, namelist in enumerate(chunks):
-        num = idx + 1
+        num = start + idx
         chunk_name = f'{prefix}{num:0{pad}}{suffix}'
         folder = os.path.join(output, chunk_name)
 
@@ -63,7 +64,7 @@ def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
             try:
                 shutil.move(from_path, to_path)
                 counter += 1
-            except Exception:   # noqa
+            except Exception:  # noqa
                 errors.setdefault('unmoved', [])
                 errors['unmoved'].append(name)
 
@@ -76,4 +77,3 @@ def main(input_path: Path, count: int, prefix: str, suffix: str, output: Path):
 
 if __name__ == '__main__':
     main()
-
