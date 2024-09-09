@@ -3,7 +3,6 @@
 import os, sys, click, tarfile, time           # noqa
 from pathlib import Path
 from contextlib import chdir
-from icecream import IceCreamDebugger
 
 from utils.utils import path_config, command_config, clean_filename
 
