@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Credentials
-user="agipoint_backer"
-password="cu!fp2Eb#l=,ZH6nZa#e"
+user=""
+password=""
 # host="localhost"
-backup_path="/home/agipoint/.backups"
+backup_path=""
 # date=$(date +%Y-%m-%d -d "yesterday")
 date=$(date +%Y-%m-%d)
 
 # Array of dbs to back up
-dblist=('agipoint_goku' 'agipoint_yaiba' 'agipoint_bmo')
+dblist=()
 
 # Set default file permissions
 umask 177

@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Credentials
-user="backer_upper"
-password='d]4jqCq}|36v1/s$Rh=Dvg~9sfx*@93kDDd!0zG4~b=,xkbUZ@/3Nt%E+dlFmV-:'
-backup_path="/home/mushroom/.backups"
+user=""
+password=''
+backup_path=""
 # date=$(date +%Y-%m-%d -d "yesterday")
 date=$(date +%Y-%m-%d)
 
 # Array of dbs to back up
-dblist=('pinfigco_ryu' 'pinfigco_taiga' 'pinfigco_astroboy')
+dblist=()
 
 # Set default file permissions
 umask 177
