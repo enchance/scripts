@@ -5,12 +5,13 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from icecream import IceCreamDebugger
+from decouple import config
 
 
 
 ic = IceCreamDebugger(prefix='')
-DATABASE_URL = os.environ.get('VIDGRAB_URL')
-SCRIPTS_URL = os.environ.get('SCRIPTS_URL')
+DATABASE_URL = config('VIDGRAB_URL')
+SCRIPTS_URL = config('SCRIPTS_URL')
 sys.path.append(SCRIPTS_URL)
 
 

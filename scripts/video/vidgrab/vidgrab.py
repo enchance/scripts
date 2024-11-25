@@ -6,14 +6,16 @@ from icecream import IceCreamDebugger
 from sqlmodel import select
 from datetime import datetime
 from pathlib import Path
-from dotenv import load_dotenv
+from decouple import Config, RepositoryEnv
 
 
+env_conf = Config(RepositoryEnv('../../.env'))
 
 try:
-    path = Path(__file__).resolve().parent.parent.parent    # scripts/scripts
-    load_dotenv(dotenv_path=os.path.join(path, '.env'))
-    sys.path.append(os.environ.get('SCRIPTS_URL'))
+    # path = Path(__file__).resolve().parent.parent.parent    # scripts/scripts
+    # load_dotenv(dotenv_path=os.path.join(path, '.env'))
+    # sys.path.append(os.environ.get('SCRIPTS_URL'))
+    # sys.path.append(config('SCRIPTS_URL'))
 
     from utils.utils import command_config, group_config
 except KeyError as e:
@@ -24,7 +26,7 @@ __prog_name__ = 'Vidgrab'
 ic = IceCreamDebugger(prefix='')
 
 try:
-    SCRIPTS_URL = os.environ.get('SCRIPTS_URL')
+    SCRIPTS_URL = env_conf('SCRIPTS_URL')
     sys.path.append(SCRIPTS_URL)
 
     from video.vidgrab.models import Video, async_session, Status
@@ -53,7 +55,7 @@ def session(activate: bool):
 @cli.command(**command_config, help='Show whitelisted domains')
 @click.argument('urls', nargs=-1)
 @click.option('-l', type=click.BOOL, help='List all whitelisted domains', default=False)
-def whitelist(urls: tuple[str], l: bool):     # noqa
+def whitelist(urls: tuple[str], l: bool):  # noqa
     ic(l)
 
 

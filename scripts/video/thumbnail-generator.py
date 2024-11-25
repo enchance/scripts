@@ -5,17 +5,18 @@ from pathlib import Path
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 from urllib.parse import quote, urlparse
 from rich import print
-from dotenv import load_dotenv
+from decouple import Config, RepositoryEnv
 from icecream import IceCreamDebugger
 
 
 
 ic = IceCreamDebugger(prefix='')
-path = Path(__file__).resolve().parent.parent
-load_dotenv(dotenv_path=os.path.join(path, '.env'))
+env_conf = Config(RepositoryEnv('../.env'))
+# path = Path(__file__).resolve().parent.parent
+# load_dotenv(dotenv_path=os.path.join(path, '.env'))
 
 try:
-    SCRIPTS_URL = os.environ.get('SCRIPTS_URL')
+    SCRIPTS_URL = env_conf('SCRIPTS_URL')
     sys.path.append(SCRIPTS_URL)
     from utils.utils import command_config, path_config, clean_filename
 except KeyError as e:
