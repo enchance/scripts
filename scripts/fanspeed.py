@@ -9,12 +9,26 @@ import sqlite3
 import argparse
 import subprocess
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 import sqlalchemy as sa
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
+
+# Speed modifiers
+SPEED_LOW_MOD = 0.2
+SPEED_HIGH_MOD = 0.1
+
+# Temp to Fan Speed Mapping (Medium Profile)
+TEMP_FAN_MAPPING: Dict[float, int] = {
+    45.0: 35,
+    55.0: 45,
+    65.0: 55,
+    70.0: 65,
+    80.0: 75,
+    82.0: 85
+}
 
 # Ensure config directory exists
 APPNAME = 'envyfanspeed'
@@ -62,19 +76,6 @@ def log_fan_data(temperature: float, fan_speed: int):
         logging.error(f"Database logging error: {e}")
 
 
-def sigmoid_fan_speed(temperature: float, max_speed: int = 90) -> int:
-    """Simple sigmoid-like fan speed adjustment"""
-    base_temp = 60
-    scale = 10
-    midpoint = 75
-
-    normalized_temp = (temperature - midpoint) / scale
-    fan_speed = int(max_speed / (1 + pow(2.718, -normalized_temp)))
-    # print(temperature, normalized_temp, fan_speed, sep=':')
-
-    return min(max(fan_speed, 20), max_speed)
-
-
 def get_gpu_temperature() -> Optional[float]:
     try:
         result = subprocess.run(
@@ -87,10 +88,24 @@ def get_gpu_temperature() -> Optional[float]:
         return None
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='NVIDIA GPU Fan Speed Control')
+    parser.add_argument('-V', '--version', action='version', version='1.0.0')
+    parser.add_argument('-d', '--detach', action='store_true', help='Run in background')
+    # parser.add_argument('-s', '--speed', choices=['low', 'medium', 'high'], default='medium')
+    # parser.add_argument('-m', '--max', type=int, default=90, help='Maximum fan speed')
+    parser.add_argument('-c', '--cooldown', type=int, default=10, help='Cooldown between adjustments')
+    parser.add_argument('--dry-run', action='store_true', help='Check temperature without changing fan speed')
+    parser.add_argument('--no-delete', action='store_true', help='Prevent database deletion')
+    parser.add_argument('--no-notify', action='store_true', help='Disable system notifications')
+
+    return parser.parse_args()
+
+
 def set_fan_speed(speed: int):
     try:
         subprocess.run(
-            ['nvidia-settings', '-a', f'[gpu:0]/GPUFanControlState=1', f'-a', f'[fan:0]/GPUTargetFanSpeed={speed}'],
+            ['nvidia-settings', '-a', '[gpu:0]/GPUFanControlState=1', '-a', f'[fan:0]/GPUTargetFanSpeed={speed}'],
             check=True
         )
         logging.info(f"Fan speed set to {speed}%")
@@ -98,18 +113,33 @@ def set_fan_speed(speed: int):
         logging.error(f"Fan speed setting error: {e}")
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='NVIDIA GPU Fan Speed Control')
-    parser.add_argument('-V', '--version', action='version', version='1.0.0')
-    parser.add_argument('-d', '--detach', action='store_true', help='Run in background')
-    parser.add_argument('-s', '--speed', choices=['slow', 'medium', 'fast'], default='medium')
-    parser.add_argument('-m', '--max', type=int, default=90, help='Maximum fan speed')
-    parser.add_argument('-c', '--cooldown', type=int, default=5, help='Cooldown between adjustments')
-    parser.add_argument('--dry-run', action='store_true', help='Check temperature without changing fan speed')
-    parser.add_argument('--no-delete', action='store_true', help='Prevent database deletion')
-    parser.add_argument('--no-notify', action='store_true', help='Disable system notifications')
+def set_fan_speed_auto():
+    """Set the GPU fan speed to auto mode."""
+    try:
+        subprocess.run(["nvidia-settings", "-a", "[fan:0]/GPUTargetFanSpeed=0"], check=True)
+        print("Fan speed set to auto mode.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to set fan speed to auto mode: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    return parser.parse_args()
+
+def calculate_fan_speed(temp: float) -> int:
+    """Calculate fan speed based on temperature and speed profile"""
+
+    sorted_keys = sorted(TEMP_FAN_MAPPING.keys())
+
+    for idx, lower_key in enumerate(sorted_keys):
+        last_idx = len(sorted_keys) - 1
+        upper_key = sorted_keys[idx + 1] if idx < last_idx else None
+
+        if idx == 0 and temp < lower_key:
+            return -1
+        elif idx == last_idx and temp >= sorted_keys[-1]:
+            return TEMP_FAN_MAPPING[sorted_keys[-1]]
+        elif lower_key <= temp < upper_key:
+            return TEMP_FAN_MAPPING[lower_key]
+        else:
+            continue
 
 
 def main():
@@ -124,6 +154,9 @@ def main():
         try:
             args = parse_arguments()
 
+            if args.dry_run:
+                print('Running in dry-run mode')
+
             # Clean previous database if not prevented
             if not args.no_delete and DB_PATH.exists():
                 DB_PATH.unlink()
@@ -134,13 +167,17 @@ def main():
                     logging.error("Could not retrieve GPU temperature")
                     break
 
-                fan_speed = sigmoid_fan_speed(temperature, args.max)
-                # print(temperature, fan_speed, sep=' : ')
-                log_fan_data(temperature, fan_speed)
+                fan_speed = calculate_fan_speed(temperature)
+                # log_fan_data(temperature, fan_speed)
+                print(temperature, fan_speed, sep='|')
 
-                if not args.dry_run:
-                    set_fan_speed(fan_speed)
+                # if not args.dry_run:
+                #     if fan_speed == -1:
+                #         set_fan_speed_auto()
+                #     else:
+                #         set_fan_speed(fan_speed)
 
+                print(temperature, fan_speed, sep=' | ')
                 time.sleep(args.cooldown)
 
         except Exception as e:
