@@ -37,6 +37,9 @@ DEFAULT_CONFIG = {
         'cpu_threshold': '79',
         'gpu_threshold': '75',
         'nvme_threshold': '65'
+    },
+    'Display': {
+        'overlay_position': 'top-right',
     }
 }
 
@@ -134,9 +137,18 @@ class TemperatureOverlay(QtWidgets.QWidget):
             label.setFont(QtGui.QFont('Consolas', 10))
             layout.addWidget(label)
 
+        xpos = 50
+        ypos = 50
+        if self.config.get('Display', 'overlay_position') == 'top-right':
+            xpos = QtWidgets.QDesktopWidget().width() - 50
+        elif self.config.get('Display', 'overlay_position') == 'bottom-right':
+            xpos = QtWidgets.QDesktopWidget().width() - 50
+            ypos = QtWidgets.QDesktopWidget().height() - 200
+        elif self.config.get('Display', 'overlay_position') == 'bottom-left':
+            ypos = QtWidgets.QDesktopWidget().height() - 200
+
         self.setLayout(layout)
-        # self.setGeometry(QtWidgets.QDesktopWidget().width() - 250, 50, 230, 200)
-        self.setGeometry(QtWidgets.QDesktopWidget().width() - 50, QtWidgets.QDesktopWidget().height() - 200, 60, 100)
+        self.setGeometry(xpos, ypos, 60, 100)
 
     def _setup_timer(self):
         interval = int(self.config.get('General', 'poll_interval')) * 1000
@@ -169,9 +181,12 @@ class TemperatureOverlay(QtWidgets.QWidget):
     def _get_temp_color(self, component: str, temp: float) -> str:
         # Implement color logic based on thresholds
         thresholds = {
-            'cpu': (65, 75, 85),
-            'gpu': (50, 65, 80),
-            'nvme': (45, 60, 70)
+            'cpu': (int(self.config.get('Thresholds', 'cpu_normal')), int(self.config.get('Thresholds', 'cpu_warm')),
+                    int(self.config.get('Thresholds', 'cpu_hot'))),
+            'gpu': (int(self.config.get('Thresholds', 'gpu_normal')), int(self.config.get('Thresholds', 'gpu_warm')),
+                    int(self.config.get('Thresholds', 'gpu_hot'))),
+            'nvme': (int(self.config.get('Thresholds', 'nvme_normal')), int(self.config.get('Thresholds', 'nvme_warm')),
+                     int(self.config.get('Thresholds', 'nvme_hot')))
         }
 
         if component not in thresholds:
