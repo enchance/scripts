@@ -86,11 +86,12 @@ class TemperatureMonitor:
             gpu_val = float(re.search(r'edge:\s*\+?([\d.]+)°C', system_temps).group(1)),
             nvme_val = float(re.search(r'Composite:\s*\+?([\d.]+)°C', system_temps).group(1))
 
-            return {
-                'cpu': cpu_val,
-                'gpu': gpu_val,
+            data = {
+                'cpu': cpu_val[0],
+                'gpu': gpu_val[0],
                 'nvme': nvme_val,
             }
+            return data
         except Exception as e:
             logging.error(f"System temperature fetch error: {e}")
             return {'cpu': -1, 'gpu': -1, 'nvme': -1}
@@ -202,7 +203,7 @@ class TemperatureOverlay(QtWidgets.QWidget):
 
         # if temp < normal:
         if temp < warm:
-            return 'rgba(29,101,0,0.75)'  # Green
+            return 'rgba(29,101,0,0.7)'  # Green
         elif temp < hot:
             return 'rgba(255,132,0,0.5)'  # Orange
         else:
