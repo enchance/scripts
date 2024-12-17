@@ -2,6 +2,7 @@
 
 import os
 import sys
+import fcntl
 import re
 import logging
 import subprocess
@@ -130,7 +131,7 @@ class TemperatureOverlay(QtWidgets.QWidget):
                 border-radius: 3px;
                 font-weight: bold;
             """)
-            label.setFont(QtGui.QFont('Consolas', 8))
+            label.setFont(QtGui.QFont('Consolas', 10))
             layout.addWidget(label)
 
         self.setLayout(layout)
@@ -149,7 +150,10 @@ class TemperatureOverlay(QtWidgets.QWidget):
 
         for key, temp in temps.items():
             color = self._get_temp_color(key, temp)
-            self.labels[key].setText(f"{key.upper()}: {temp}°C")
+            if key in ['cpu', 'gpu']:
+                self.labels[key].setText(f"{key.upper()}:  {temp}°C")
+            else:
+                self.labels[key].setText(f"{key.upper()}: {temp}°C")
             self.labels[key].setStyleSheet(f"""
                 color: white;
                 background-color: {color};
@@ -175,18 +179,13 @@ class TemperatureOverlay(QtWidgets.QWidget):
 
         normal, warm, hot = thresholds[component]
 
-        if temp < normal:
-            # return 'rgba(0,255,0,150)'  # Green
-            return 'rgba(188,255,0,70)'  # Green
-        elif temp < warm:
-            # return 'rgba(255,255,0,50)'  # Yellow
-            return 'rgba(248,241,90,70)'  # Yellow
+        # if temp < normal:
+        if temp < warm:
+            return 'rgba(29,101,0,0.75)'  # Green
         elif temp < hot:
-            # return 'rgba(255,165,0,50)'  # Orange
-            return 'rgba(255,209,83,70)'  # Orange
+            return 'rgba(255,132,0,0.5)'  # Orange
         else:
-            # return 'rgba(255,0,0,50)'  # Red
-            return 'rgba(255,115,83,70)'  # Red
+            return 'rgba(117,0,0,0.8)'  # Red
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
@@ -205,12 +204,29 @@ class TemperatureOverlay(QtWidgets.QWidget):
 
 
 def main():
-    setproctitle('oversensors')
-    app = QtWidgets.QApplication(sys.argv)
-    config = TemperatureConfig()
-    overlay = TemperatureOverlay(config)
-    overlay.show()
-    sys.exit(app.exec_())
+    # process_title = DEFAULT_CONFIG.get('DEFAULT_CONFIG', 'process_title')
+    process_title = 'oversensors'
+    lock_file = "/tmp/oversensors.lock"
+
+    try:
+        # Open a lock file
+        fp = open(lock_file, "w+")
+        # Try to lock it using fcntl
+        fcntl.flock(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        print("Another instance of the script is already running. Exiting.")
+        sys.exit(1)
+
+    try:
+        setproctitle(process_title)
+        app = QtWidgets.QApplication(sys.argv)
+        config = TemperatureConfig()
+        overlay = TemperatureOverlay(config)
+        overlay.show()
+        sys.exit(app.exec_())
+    finally:
+        fcntl.flock(fp, fcntl.LOCK_UN)  # noqa
+        fp.close()  # noqa
 
 
 if __name__ == '__main__':
