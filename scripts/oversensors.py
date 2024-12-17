@@ -7,7 +7,6 @@ import re
 import logging
 import subprocess
 import configparser
-from typing import Dict, List
 from logging.handlers import RotatingFileHandler
 from setproctitle import setproctitle
 
@@ -78,20 +77,26 @@ class TemperatureMonitor:
     #         handlers=[handler]
     #     )
 
-    def get_temperatures(self) -> Dict[str, float]:
+    @staticmethod
+    def get_temperatures() -> dict[str, float]:
         try:
             system_temps = subprocess.check_output(['sensors'], text=True)
 
+            cpu_val = float(re.search(r'Tctl:\s*\+?([\d.]+)°C', system_temps).group(1)),
+            gpu_val = float(re.search(r'edge:\s*\+?([\d.]+)°C', system_temps).group(1)),
+            nvme_val = float(re.search(r'Composite:\s*\+?([\d.]+)°C', system_temps).group(1))
+
             return {
-                'cpu': float(re.search(r'Tctl:\s*\+?([\d.]+)°C', system_temps).group(1)),
-                'gpu': float(re.search(r'edge:\s*\+?([\d.]+)°C', system_temps).group(1)),
-                'nvme': float(re.search(r'Composite:\s*\+?([\d.]+)°C', system_temps).group(1))
+                'cpu': cpu_val,
+                'gpu': gpu_val,
+                'nvme': nvme_val,
             }
         except Exception as e:
             logging.error(f"System temperature fetch error: {e}")
             return {'cpu': -1, 'gpu': -1, 'nvme': -1}
 
-    def get_gpu_fans(self) -> List[int]:
+    @staticmethod
+    def get_gpu_fans() -> list[int]:
         try:
             # Use nvidia-smi to get GPU fan speeds
             nvidia_output = subprocess.check_output(['nvidia-smi', '--query-gpu=fan.speed', '--format=csv,noheader'],
@@ -137,6 +142,7 @@ class TemperatureOverlay(QtWidgets.QWidget):
             label.setFont(QtGui.QFont('Consolas', 10))
             layout.addWidget(label)
 
+        # top-left
         xpos = 50
         ypos = 50
         if self.config.get('Display', 'overlay_position') == 'top-right':
@@ -203,12 +209,12 @@ class TemperatureOverlay(QtWidgets.QWidget):
             return 'rgba(117,0,0,0.8)'  # Red
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton:
-            self._drag_pos = event.globalPos() - self.frameGeometry().topLeft()
+        if event.button() == QtCore.Qt.LeftButton:  # noqa
+            self._drag_pos = event.globalPos() - self.frameGeometry().topLeft()  # noqa
             event.accept()
 
     def mouseMoveEvent(self, event):
-        if self._drag_pos and event.buttons() == QtCore.Qt.LeftButton:
+        if self._drag_pos and event.buttons() == QtCore.Qt.LeftButton:  # noqa
             self.move(event.globalPos() - self._drag_pos)
             event.accept()
 
