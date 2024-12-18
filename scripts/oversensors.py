@@ -50,10 +50,7 @@ class TemperatureConfig:
         self.load_config()
 
     def load_config(self):
-        # Load defaults first
         self.config.read_dict(DEFAULT_CONFIG)
-
-        # Attempt to read user config
         if os.path.exists(self.config_path):
             self.config.read(self.config_path)
 
@@ -123,6 +120,8 @@ class TemperatureOverlay(QtWidgets.QWidget):
                             QtCore.Qt.FramelessWindowHint |
                             QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        self._create_context_menu()
 
         layout = QtWidgets.QVBoxLayout()
         self.labels = {
@@ -208,6 +207,17 @@ class TemperatureOverlay(QtWidgets.QWidget):
             return 'rgba(255,132,0,0.5)'  # Orange
         else:
             return 'rgba(117,0,0,0.8)'  # Red
+
+    def _create_context_menu(self):
+        self.context_menu = QtWidgets.QMenu(self)
+        close_action = self.context_menu.addAction("Close")
+        close_action.triggered.connect(self._close_application)
+
+    def _close_application(self):
+        QtWidgets.QApplication.instance().quit()
+
+    def contextMenuEvent(self, event):
+        self.context_menu.exec_(event.globalPos())
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:  # noqa
