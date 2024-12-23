@@ -30,7 +30,10 @@ DEFAULT_CONFIG = {
         'gpu_hot': '80',
         'nvme_normal': '45',
         'nvme_warm': '60',
-        'nvme_hot': '70'
+        'nvme_hot': '70',
+        'fan_normal': '0',
+        'fan_warm': '60',
+        'fan_hot': '80'
     },
     'Notifications': {
         'cpu_threshold': '79',
@@ -227,10 +230,11 @@ class TemperatureOverlay(QtWidgets.QWidget):
     def _create_context_menu(self):
         self.context_menu = QtWidgets.QMenu(self)
         close_action = self.context_menu.addAction("Close")
-        close_action.triggered.connect(self._close_application)
+        close_action.triggered.connect(self._close_application)  # noqa
 
 
-    def _close_application(self):
+    @staticmethod
+    def _close_application():
         QtWidgets.QApplication.instance().quit()
 
 
