@@ -49,10 +49,12 @@ class TemperatureConfig:
         self.config = configparser.ConfigParser()
         self.load_config()
 
+
     def load_config(self):
         self.config.read_dict(DEFAULT_CONFIG)
         if os.path.exists(self.config_path):
             self.config.read(self.config_path)
+
 
     def get(self, section, key, fallback=None):
         return self.config.get(section, key, fallback=fallback)
@@ -62,6 +64,7 @@ class TemperatureMonitor:
     def __init__(self, config: TemperatureConfig):
         self.config = config
         # self.setup_logging()
+
 
     # def setup_logging(self):
     #     log_file = self.config.get('General', 'log_file')
@@ -93,17 +96,16 @@ class TemperatureMonitor:
             logging.error(f"System temperature fetch error: {e}")
             return {'cpu': -1, 'gpu': -1, 'nvme': -1}
 
+
     @staticmethod
-    def get_gpu_fans() -> list[int]:
+    def get_gpu_fans() -> int:
         try:
-            # Use nvidia-smi to get GPU fan speeds
             nvidia_output = subprocess.check_output(['nvidia-smi', '--query-gpu=fan.speed', '--format=csv,noheader'],
                                                     text=True)
-            # Parse fan speeds, split and convert to integers
-            return [int(speed.strip().rstrip(' %')) for speed in nvidia_output.split('\n') if speed.strip()]
+            return int(nvidia_output.strip().rstrip(' %'))
         except Exception as e:
             logging.error(f"GPU fan speed fetch error: {e}")
-            return []
+            return -1
 
 
 class TemperatureOverlay(QtWidgets.QWidget):
@@ -115,11 +117,12 @@ class TemperatureOverlay(QtWidgets.QWidget):
         self._setup_ui()
         self._setup_timer()
 
+
     def _setup_ui(self):
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint |
-                            QtCore.Qt.FramelessWindowHint |
-                            QtCore.Qt.Tool)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint |  # type: ignore
+                            QtCore.Qt.FramelessWindowHint |  # type: ignore
+                            QtCore.Qt.Tool)  # type: ignore
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # type: ignore
 
         self._create_context_menu()
 
@@ -156,33 +159,42 @@ class TemperatureOverlay(QtWidgets.QWidget):
         self.setLayout(layout)
         self.setGeometry(xpos, ypos, 60, 100)
 
+
     def _setup_timer(self):
         interval = int(self.config.get('General', 'poll_interval')) * 1000
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_temperatures)
         self.timer.start(interval)
 
+
     def update_temperatures(self):
         temps = self.monitor.get_temperatures()
         fans = self.monitor.get_gpu_fans()
 
         for key, temp in temps.items():
-            color = self._get_temp_color(key, temp)
+            bgcolor = self._get_temp_color(key, temp)
             if key in ['cpu', 'gpu']:
                 self.labels[key].setText(f"{key.upper()}:  {temp}°C")
             else:
                 self.labels[key].setText(f"{key.upper()}: {temp}°C")
-            self.labels[key].setStyleSheet(f"""
+            self.labels[key].setStyleSheet(self._get_stylesheet(bgcolor))
+
+        if fans >= 0:
+            fan_text = f'Fans: {fans}%'
+            bgcolor = self._get_temp_color('fans', fans)
+            self.labels['fans'].setText(fan_text)
+            self.labels['fans'].setStyleSheet(self._get_stylesheet(bgcolor))
+
+
+    @staticmethod
+    def _get_stylesheet(bgcolor: str) -> str:
+        return f"""
                 color: white;
-                background-color: {color};
+                background-color: {bgcolor};
                 padding: 3px;
                 border-radius: 5px;
-            """)
+            """
 
-        # Display GPU fan speeds
-        if fans:
-            fan_text = "Fans: " + " / ".join(f"{speed}%" for speed in fans)
-            self.labels['fans'].setText(fan_text)
 
     def _get_temp_color(self, component: str, temp: float) -> str:
         # Implement color logic based on thresholds
@@ -192,7 +204,9 @@ class TemperatureOverlay(QtWidgets.QWidget):
             'gpu': (int(self.config.get('Thresholds', 'gpu_normal')), int(self.config.get('Thresholds', 'gpu_warm')),
                     int(self.config.get('Thresholds', 'gpu_hot'))),
             'nvme': (int(self.config.get('Thresholds', 'nvme_normal')), int(self.config.get('Thresholds', 'nvme_warm')),
-                     int(self.config.get('Thresholds', 'nvme_hot')))
+                     int(self.config.get('Thresholds', 'nvme_hot'))),
+            'fans': (int(self.config.get('Thresholds', 'fan_off')), int(self.config.get('Thresholds', 'fan_slow')),
+                     int(self.config.get('Thresholds', 'fan_fast')))
         }
 
         if component not in thresholds:
@@ -200,29 +214,35 @@ class TemperatureOverlay(QtWidgets.QWidget):
 
         normal, warm, hot = thresholds[component]
 
-        # if temp < normal:
-        if temp < warm:
+        if temp < normal:
+            return 'rgba(29,101,0,0.7)'  # Green
+        elif temp < warm:
             return 'rgba(29,101,0,0.7)'  # Green
         elif temp < hot:
             return 'rgba(255,132,0,0.5)'  # Orange
         else:
             return 'rgba(117,0,0,0.8)'  # Red
 
+
     def _create_context_menu(self):
         self.context_menu = QtWidgets.QMenu(self)
         close_action = self.context_menu.addAction("Close")
         close_action.triggered.connect(self._close_application)
 
+
     def _close_application(self):
         QtWidgets.QApplication.instance().quit()
 
+
     def contextMenuEvent(self, event):
         self.context_menu.exec_(event.globalPos())
+
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:  # noqa
             self._drag_pos = event.globalPos() - self.frameGeometry().topLeft()  # noqa
             event.accept()
+
 
     def mouseMoveEvent(self, event):
         if self._drag_pos and event.buttons() == QtCore.Qt.LeftButton:  # noqa
