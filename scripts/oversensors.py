@@ -132,9 +132,9 @@ class TemperatureOverlay(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.labels = {
             'cpu': QtWidgets.QLabel("CPU: --"),
-            'gpu': QtWidgets.QLabel("GPU: --"),
-            'nvme': QtWidgets.QLabel("NVME: --"),
-            'fans': QtWidgets.QLabel("Fans: --")
+            'gpu': QtWidgets.QLabel("GPU: --/--"),
+            'nvme': QtWidgets.QLabel("M.2: --"),
+            # 'fans': QtWidgets.QLabel("Fans: --")
         }
 
         for label in self.labels.values():
@@ -149,15 +149,15 @@ class TemperatureOverlay(QtWidgets.QWidget):
             layout.addWidget(label)
 
         # top-left
-        xpos = 50
+        xpos = 35
         ypos = 50
         if self.config.get('Display', 'overlay_position') == 'top-right':
-            xpos = QtWidgets.QDesktopWidget().width() - 50
+            xpos = QtWidgets.QDesktopWidget().width() - 150
         elif self.config.get('Display', 'overlay_position') == 'bottom-right':
-            xpos = QtWidgets.QDesktopWidget().width() - 50
-            ypos = QtWidgets.QDesktopWidget().height() - 200
+            xpos = QtWidgets.QDesktopWidget().width() - 150
+            ypos = QtWidgets.QDesktopWidget().height() - 130
         elif self.config.get('Display', 'overlay_position') == 'bottom-left':
-            ypos = QtWidgets.QDesktopWidget().height() - 200
+            ypos = QtWidgets.QDesktopWidget().height() - 130
 
         self.setLayout(layout)
         self.setGeometry(xpos, ypos, 60, 100)
@@ -174,19 +174,31 @@ class TemperatureOverlay(QtWidgets.QWidget):
         temps = self.monitor.get_temperatures()
         fans = self.monitor.get_gpu_fans()
 
-        for key, temp in temps.items():
-            bgcolor = self._get_temp_color(key, temp)
-            if key in ['cpu', 'gpu']:
-                self.labels[key].setText(f"{key.upper()}:  {temp}°C")
-            else:
-                self.labels[key].setText(f"{key.upper()}: {temp}°C")
-            self.labels[key].setStyleSheet(self._get_stylesheet(bgcolor))
+        cpu_data = temps['cpu']
+        gpu_data = temps['gpu']
+        nvme_data = temps['nvme']
+        fans_data = fans
 
-        if fans >= 0:
-            fan_text = f'Fans: {fans}%'
-            bgcolor = self._get_temp_color('fans', fans)
-            self.labels['fans'].setText(fan_text)
-            self.labels['fans'].setStyleSheet(self._get_stylesheet(bgcolor))
+        self.labels['cpu'].setText(f"CPU: {cpu_data}°C")
+        self.labels['gpu'].setText(f"GPU: {gpu_data}°C/{fans_data}%")
+        self.labels['nvme'].setText(f"M.2: {nvme_data}°C")
+        self.labels['cpu'].setStyleSheet(self._get_stylesheet(self._get_temp_color('cpu', cpu_data, fans_data)))
+        self.labels['gpu'].setStyleSheet(self._get_stylesheet(self._get_temp_color('gpu', gpu_data)))
+        self.labels['nvme'].setStyleSheet(self._get_stylesheet(self._get_temp_color('nvme', nvme_data)))
+
+        # for key, temp in temps.items():
+        #     bgcolor = self._get_temp_color(key, temp)
+        #     if key in ['cpu', 'gpu']:
+        #         self.labels[key].setText(f"{key.upper()}:  {temp}°C")
+        #     else:
+        #         self.labels[key].setText(f"{key.upper()}: {temp}°C")
+        #     self.labels[key].setStyleSheet(self._get_stylesheet(bgcolor))
+        #
+        # if fans >= 0:
+        #     fan_text = f'Fans: {fans}%'
+        #     bgcolor = self._get_temp_color('fans', fans)
+        #     self.labels['fans'].setText(fan_text)
+        #     self.labels['fans'].setStyleSheet(self._get_stylesheet(bgcolor))
 
 
     @staticmethod
@@ -199,7 +211,7 @@ class TemperatureOverlay(QtWidgets.QWidget):
             """
 
 
-    def _get_temp_color(self, component: str, temp: float) -> str:
+    def _get_temp_color(self, component: str, temp: float, secondary: float | None = None) -> str:
         # Implement color logic based on thresholds
         thresholds = {
             'cpu': (int(self.config.get('Thresholds', 'cpu_normal')), int(self.config.get('Thresholds', 'cpu_warm')),
@@ -217,14 +229,24 @@ class TemperatureOverlay(QtWidgets.QWidget):
 
         normal, warm, hot = thresholds[component]
 
-        if temp < normal:
-            return 'rgba(29,101,0,0.7)'  # Green
-        elif temp < warm:
-            return 'rgba(29,101,0,0.7)'  # Green
-        elif temp < hot:
-            return 'rgba(255,132,0,0.5)'  # Orange
+        if secondary:
+            if temp < normal and secondary < normal:
+                return 'rgba(29,101,0,0.7)'  # Green
+            elif temp < warm or secondary < warm:
+                return 'rgba(29,101,0,0.7)'  # Green
+            elif temp < hot or secondary < hot:
+                return 'rgba(255,132,0,0.5)'  # Orange
+            else:
+                return 'rgba(117,0,0,0.8)'  # Red
         else:
-            return 'rgba(117,0,0,0.8)'  # Red
+            if temp < normal:
+                return 'rgba(29,101,0,0.7)'  # Green
+            elif temp < warm:
+                return 'rgba(29,101,0,0.7)'  # Green
+            elif temp < hot:
+                return 'rgba(255,132,0,0.5)'  # Orange
+            else:
+                return 'rgba(117,0,0,0.8)'  # Red
 
 
     def _create_context_menu(self):
