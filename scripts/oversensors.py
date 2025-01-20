@@ -154,8 +154,8 @@ class TemperatureOverlay(QtWidgets.QWidget):
         if self.config.get('Display', 'overlay_position') == 'top-right':
             xpos = QtWidgets.QDesktopWidget().width() - 150
         elif self.config.get('Display', 'overlay_position') == 'bottom-right':
-            xpos = QtWidgets.QDesktopWidget().width() - 150
-            ypos = QtWidgets.QDesktopWidget().height() - 130
+            xpos = QtWidgets.QDesktopWidget().width() - 183
+            ypos = QtWidgets.QDesktopWidget().height() - 125
         elif self.config.get('Display', 'overlay_position') == 'bottom-left':
             ypos = QtWidgets.QDesktopWidget().height() - 130
 
