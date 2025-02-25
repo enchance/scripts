@@ -36,26 +36,28 @@ def generate_unique_filename(original_path: Path) -> Path:
     return original_path.parent / new_name
 
 
-def convert_image(source: Path, target: Path, quality: int) -> Tuple[bool, Optional[str]]:
+def convert_image(source: Path, target: Path, quality: int, resolution: int) -> Tuple[bool, str | None]:
     """Convert a single image to JPG format."""
     try:
+        print(resolution)
         with Image.open(source) as img:
-            # Convert to RGB if necessary (for PNG transparency)
-            if img.mode in ('RGBA', 'LA'):
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                background.paste(img, mask=img.split()[-1])
-                img = background
-            elif img.mode != 'RGB':
-                img = img.convert('RGB')
+            dpi = img.info.get("dpi", (72, 72))
 
-            img.save(target, 'JPEG', quality=quality)
+            if resolution:
+                scale_factor = resolution / dpi[0]
+                width, height = img.size
+                new_size = (int(width * scale_factor), int(height * scale_factor))
+                img = img.resize(new_size, Image.LANCZOS)  # noqa
+                dpi = (resolution, resolution)
+
+            img.convert('RGB').save(target, 'JPEG', quality=quality, dpi=dpi)
         return True, None
     except Exception as e:
         return False, str(e)
 
 
 def process_images(files: List[Path], delete_original: bool, verbose: bool, dry_run: bool, recursive: bool,
-                   quality: int) -> Tuple[int, List[str], List[str]]:
+                   quality: int, resolution: int) -> Tuple[int, List[str], List[str]]:
     """Process all images with progress bar and error tracking."""
     converted_count = 0
     conversion_errors: List[str] = []
@@ -77,7 +79,7 @@ def process_images(files: List[Path], delete_original: bool, verbose: bool, dry_
                     click.echo(f"Would delete: {source}")
                 continue
 
-            success, error_msg = convert_image(source, target, quality)
+            success, error_msg = convert_image(source, target, quality, resolution)
 
             if success:
                 converted_count += 1
@@ -106,14 +108,16 @@ def confirm_deletion() -> bool:
 
 @click.command()
 @click.argument('path', type=click.Path(exists=True, path_type=Path))
-@click.option('-r', '--recursive', is_flag=True, help='Search recursively in subdirectories.')
+@click.argument('resolution', type=click.INT, default=0)
+@click.option('-R', '--recursive', is_flag=True, help='Search recursively in subdirectories.')
 @click.option('-f', '--format', 'formats', default='png',
               help='Image formats to convert (comma-separated). Default: png')
-@click.option('-d', '--delete', is_flag=True, help='Delete original files after conversion.')
+@click.option('-D', '--delete', is_flag=True, help='Delete original files after conversion.')
 @click.option('-q', '--quality', default=JPG_QUALITY, help=f'JPEG quality. Default: {JPG_QUALITY}')
 @click.option('-v', '--verbose', is_flag=True, help='Show verbose output.')
 @click.option('--dry-run', is_flag=True, help='Show what would be done without making changes.')
-def main(path: Path, recursive: bool, formats: str, delete: bool, verbose: bool, dry_run: bool, quality: int):
+def main(path: Path, resolution: int, recursive: bool, formats: str, delete: bool, verbose: bool, dry_run: bool,
+         quality: int):
     """Convert image files to JPG format."""
     if not path.exists() or not path.is_dir():
         click.echo("Error: Specified folder does not exist or is not accessible.", err=True)
@@ -134,7 +138,7 @@ def main(path: Path, recursive: bool, formats: str, delete: bool, verbose: bool,
         click.echo(f"Found {len(files)} files to process")
 
     converted_count, conversion_errors, other_errors = process_images(files, delete, verbose, dry_run,
-                                                                      recursive, quality)
+                                                                      recursive, quality, resolution)
 
     # Display results with color
     if not dry_run:
