@@ -1,0 +1,44 @@
+.\" Man page for grabpage
+.TH GRABPAGE 1 "2023-10-01" "grabpage 1.0" "User Commands"
+.SH NAME
+grabpage \- download a webpage and its resources for offline viewing
+.SH SYNOPSIS
+.B grabpage
+.RB [ --no-js ]
+.I URL
+.SH DESCRIPTION
+The
+.B grabpage
+function downloads a webpage and its associated resources (such as images, CSS, and optionally JavaScript) for offline viewing using
+.BR wget .
+.SH OPTIONS
+.TP
+.B --no-js
+Excludes JavaScript files from the download.
+.SH ARGUMENTS
+.TP
+.I URL
+The URL of the webpage to download (required).
+.SH EXAMPLES
+.TP
+Download a webpage with all resources (including JavaScript):
+.RS
+.B grabpage https://example.com
+.RE
+.TP
+Download a webpage without JavaScript:
+.RS
+.B grabpage --no-js https://example.com
+.RE
+.SH NOTES
+This function ignores robots.txt restrictions by default, which may violate website policies. Use responsibly and ensure compliance with applicable laws and terms of service.
+.SH AUTHOR
+Written by enchance.
+.SH REPORTING BUGS
+Report bugs to your local 7-11.
+.SH COPYRIGHT
+Copyright©2025 enchance.
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH SEE ALSO
+.BR wget (1)

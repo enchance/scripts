@@ -1,0 +1,70 @@
+.\" Man page for grabsite
+.TH GRABSITE 1 "2023-10-01" "grabsite 1.0" "User Commands"
+.SH NAME
+grabsite \- download an entire website for offline viewing
+.SH SYNOPSIS
+.B grabsite
+.RB [ --no-js ]
+.RB [ --ignore-robots ]
+.RB [ --depth
+.IR N ]
+.I URL
+.SH DESCRIPTION
+The
+.B grabsite
+function downloads an entire website, including its resources (such as images, CSS, and optionally JavaScript), for offline viewing using
+.BR wget .
+By default, it mirrors the site up to a maximum depth of 5 levels. The function uses the
+.BR -np
+option so downloading is restricted only to 
+.BR URL
+and not to any of its parents.
+.SH OPTIONS
+.TP
+.B --no-js
+Excludes JavaScript files from the download.
+.TP
+.BI --depth " N"
+Sets the maximum recursion depth to
+.I N
+levels (default: 5). Use a lower value to download less content or a higher value to download more.
+.SH ARGUMENTS
+.TP
+.I URL
+The URL of the website to download (required).
+.SH EXAMPLES
+.TP
+Download a website with all resources (including JavaScript), up to 5 levels deep:
+.RS
+.B grabsite https://example.com
+.RE
+.TP
+Download a website without JavaScript, up to 5 levels deep:
+.RS
+.B grabsite --no-js https://example.com
+.RE
+.TP
+Download a website up to 3 levels deep:
+.RS
+.B grabsite --depth 3 https://example.com
+.RE
+.TP
+Download a website without JavaScript up to 2 levels deep:
+.RS
+.B grabsite --no-js --depth 2 https://example.com
+.RE
+.SH NOTES
+This function uses
+.BR wget
+with options that may download significant amounts of data (especially with higher recursion depths). Use lower depths to limit the scope of the download. It also ignores robots.txt restrictions by default, which may violate website policies.
+.SH AUTHOR
+Written by enchance.
+.SH REPORTING BUGS
+Report bugs to your local 7-11.
+.SH COPYRIGHT
+Copyright©2025 enchance.
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH SEE ALSO
+.BR wget (1),
+.BR grabpage (1)
